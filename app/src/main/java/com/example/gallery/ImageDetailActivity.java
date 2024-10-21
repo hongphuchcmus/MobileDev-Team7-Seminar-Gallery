@@ -1,6 +1,9 @@
 package com.example.gallery;
 
+import android.content.ContentUris;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
@@ -15,7 +18,7 @@ public class ImageDetailActivity extends AppCompatActivity {
 
     // creating a string variable, image view variable
     // and a variable for our scale gesture detector class.
-    String imgPath;
+    long imgPath;
     private ImageView imageView;
     private ScaleGestureDetector scaleGestureDetector;
 
@@ -28,7 +31,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image_detail);
 
         // on below line getting data which we have passed from our adapter class.
-        imgPath = getIntent().getStringExtra("imgPath");
+        imgPath = getIntent().getLongExtra("imgPath", 0);
 
         // initializing our image view.
         imageView = findViewById(R.id.idIVImage);
@@ -37,15 +40,14 @@ public class ImageDetailActivity extends AppCompatActivity {
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
 
         // on below line we are getting our image file from its path.
-        File imgFile = new File(imgPath);
+        Uri imgUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imgPath);
 
         // if the file exists then we are loading that image in our image view.
-        if (imgFile.exists()) {
-            Picasso.get().load(imgFile)
-                    .placeholder(R.drawable.image_detail_placeholder)
-                    .error(R.drawable.image_detail_error)
-                    .into(imageView);
-        }
+        Picasso.get()
+                .load(imgUri)
+                .placeholder(R.drawable.image_detail_placeholder)
+                .error(R.drawable.image_detail_error)
+                .into(imageView);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.example.gallery;
+import android.content.ContentResolver;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -14,7 +16,11 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import android.net.Uri;
+import android.content.ContentUris;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 
@@ -23,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     // on below line we are creating variables for
     // our array list, recycler view and adapter class.
     private static final int PERMISSION_REQUEST_CODE = 200;
-    private ArrayList<String> imagePaths;
+    private ArrayList<Long> imagePaths;
     private RecyclerView imagesRV;
     private RecyclerViewAdapter imageRVAdapter;
 
@@ -31,8 +37,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
 
         // creating a new array list and
         // initializing our recycler view.
@@ -88,46 +92,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getImagePath() {
-        // in this method we are adding all our image paths
-        // in our arraylist which we have created.
-        // on below line we are checking if the device is having an sd card or not.
-        boolean isExternalStorageAvailable  = android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
-        if (isExternalStorageAvailable ) {
-            // if the sd card is present we are creating a new list in
-            // which we are getting our images data with their ids.
-            final String[] columns = {MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};
 
-            // on below line we are creating a new
-            // string to order our images by string.
-            final String orderBy = MediaStore.Images.Media._ID;
+        ContentResolver contentResolver = this.getContentResolver();
+        Cursor cursor = contentResolver.query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME},
+                null, null, null);
 
-            // this method will stores all the images
-            // from the gallery in Cursor
-            Cursor cursor = getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, null, null, orderBy);
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
+                int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
 
-            // below line is to get total number of images
-            int count = cursor.getCount();
+                long id = cursor.getLong(idColumn);
+                String name = cursor.getString(nameColumn);
 
-            // on below line we are running a loop to add
-            // the image file path in our array list.
-            for (int i = 0; i < count; i++) {
+                Uri imgUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
 
-                // on below line we are moving our cursor position
-                cursor.moveToPosition(i);
-
-                // on below line we are getting image file path
-                int dataColumnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-
-                // after that we are getting the image file path
-                // and adding that path in our array list.
-                String path = cursor.getString(dataColumnIndex);
-                File file = new File(path);
-                if (file.exists()){
-                    imagePaths.add(path);
+                if (uriExists(imgUri)){
+                    imagePaths.add(id);
                 }
             }
-            // after adding the data to our
-            // array list we are closing our cursor.
             cursor.close();
         }
     }
@@ -157,5 +143,9 @@ public class MainActivity extends AppCompatActivity {
 
                 break;
         }
+    }
+
+    private boolean uriExists(Uri uri){
+        return true;
     }
 }

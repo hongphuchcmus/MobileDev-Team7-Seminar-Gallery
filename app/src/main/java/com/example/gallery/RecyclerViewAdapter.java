@@ -1,6 +1,9 @@
 package com.example.gallery;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,10 +22,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     // creating a variable for our context and array list.
     private final Context context;
-    private final ArrayList<String> imagePathArrayList;
+    private final ArrayList<Long> imagePathArrayList;
 
     // on below line we have created a constructor.
-    public RecyclerViewAdapter(Context context, ArrayList<String> imagePathArrayList) {
+    public RecyclerViewAdapter(Context context, ArrayList<Long> imagePathArrayList) {
         this.context = context;
         this.imagePathArrayList = imagePathArrayList;
     }
@@ -39,15 +42,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public void onBindViewHolder(@NonNull RecyclerViewHolder holder, int position) {
         // on below line we are getting the file from the
         // path which we have stored in our list.
-
-        File imgFile = new File(imagePathArrayList.get(holder.getAdapterPosition()));
+        Uri imgUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imagePathArrayList.get(holder.getAdapterPosition()));
 
         // on below line we are checking if the file exists or not.
-        if (imgFile.exists()) {
-            Log.i("DEBUG", String.valueOf(holder.getAdapterPosition()) + "; File path: " + imgFile.getPath());
+        if (true) {
             // if the file exists then we are displaying that file in our image view using picasso library.
             Picasso.get()
-                    .load(imgFile)
+                    .load(imgUri)
                     .resize(128, 128)
                     .centerCrop()
                     .placeholder(R.drawable.image_placeholder)
@@ -63,14 +64,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                     Intent i = new Intent(context, ImageDetailActivity.class);
 
                     // on below line we are passing the image path to our new activity.
-                    i.putExtra("imgPath", imagePathArrayList.get(holder.getAdapterPosition()));
+                    i.putExtra("imgPath",  imagePathArrayList.get(holder.getAdapterPosition()));
 
                     // at last we are starting our activity.
                     context.startActivity(i);
                 }
             });
         } else {
-            Log.i("DEBUG", "Skipped: " + String.valueOf(holder.getAdapterPosition()) + "; File path: " + imgFile.getPath());
+            //Log.i("DEBUG", "Skipped: " + String.valueOf(holder.getAdapterPosition()) + "; File path: " + imgFile.getPath());
         };
     }
 
