@@ -90,11 +90,9 @@ public class MainActivity extends AppCompatActivity {
     private void getImagePath() {
         // in this method we are adding all our image paths
         // in our arraylist which we have created.
-        // on below line we are checking if the device is having an sd card or not.
         boolean isExternalStorageAvailable  = android.os.Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
         if (isExternalStorageAvailable ) {
-            // if the sd card is present we are creating a new list in
-            // which we are getting our images data with their ids.
+            // we are creating a new list in  which we are getting our images data with their ids.
             final String[] columns = {MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};
 
             // on below line we are creating a new
