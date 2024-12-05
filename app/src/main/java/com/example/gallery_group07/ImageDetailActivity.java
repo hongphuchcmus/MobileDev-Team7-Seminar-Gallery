@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +26,7 @@ import com.bumptech.glide.request.target.Target;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 
 public class ImageDetailActivity extends AppCompatActivity {
     public static final String TAG = "ImageDetailView>>";
@@ -34,6 +36,7 @@ public class ImageDetailActivity extends AppCompatActivity {
     private GestureDetector spanGestureDetector;
 
     // Image state
+    private int imgIndex = 0;
     private float scaleFactor = 1.0f;
     private float offsetX = 0.0f;
     private float offsetY = 0.0f;
@@ -44,14 +47,20 @@ public class ImageDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.image_detail);
 
+        long imgId = getIntent().getLongExtra("imgId", -1);
+        imgIndex = ImageManager.getInstance().getImageIndexById(imgId);
+//        String imgDisplayName = getIntent().getStringExtra("imgDisplayName");
+//        long imgDateAddedMillis = getIntent().getLongExtra("imgDateAddedMillis", 0);
+//        Date imgDateAdded = new Date(imgDateAddedMillis);
+//        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
 
-        long imgId = getIntent().getLongExtra("imgId", 0);
-        String imgDisplayName = getIntent().getStringExtra("imgDisplayName");
-        long imgDateAddedMillis = getIntent().getLongExtra("imgDateAddedMillis", 0);
-        Date imgDateAdded = new Date(imgDateAddedMillis);
-        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
 
-        MediaStoreImage image = new MediaStoreImage(imgId, imgDisplayName, imgDateAdded, imgUri);
+        if (imgIndex < 0){
+            Toast.makeText(this, "Error loading image with id " + imgId, Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
 
         setTitle(image.displayName);
 
@@ -93,7 +102,6 @@ public class ImageDetailActivity extends AppCompatActivity {
             float focusY = detector.getFocusY();
 
             // Compute scale adjustment
-            float prevScaleFactor = activity.scaleFactor;
             activity.scaleFactor *= scaleChange;
             activity.scaleFactor = Math.max(1.0f, Math.min(activity.scaleFactor, 10.0f));
 
@@ -125,6 +133,19 @@ public class ImageDetailActivity extends AppCompatActivity {
             activity.offsetX -= distanceX;
             activity.offsetY -= distanceY;
 
+            if (Math.abs(distanceX) > 1.0f){
+                // Next Image
+                if (distanceX > 0.0f){
+                    activity.changeToNextImage();
+                    return true;
+                }
+                // Previous Image
+                if (distanceX < 0.0f){
+                    activity.changeToPreviousImage();
+                    return true;
+                }
+            }
+
             activity.clampOffsetToBounds();
             activity.imageDetailView.setTranslationX(activity.offsetX);
             activity.imageDetailView.setTranslationY(activity.offsetY);
@@ -153,6 +174,51 @@ public class ImageDetailActivity extends AppCompatActivity {
         // Clamp to lower bound
         if (viewHeight * 0.5f + offsetY + scaledImageHeight * 0.5f < viewHeight){
             offsetY = viewHeight - scaledImageHeight * 0.5f - viewHeight * 0.5f;
+        }
+    }
+
+    private void changeToNextImage(){
+        List<MediaStoreImage> images = ImageManager.getInstance().getImageList();
+        if (imgIndex < images.size() - 1) {
+            imgIndex++;
+            updateContent();
+        } else {
+            Toast.makeText(this, "This is the last image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private  void changeToPreviousImage(){
+        if (imgIndex > 0) {
+            imgIndex--;
+            updateContent();
+        } else {
+            Toast.makeText(this, "This is the first image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateContent() {
+        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
+
+        if (image != null) {
+            setTitle(image.displayName);
+            Glide.with(this)
+                    .load(image.contentUri)
+                    .apply(new RequestOptions()
+                            .fitCenter()
+                            .format(DecodeFormat.PREFER_ARGB_8888)
+                            .override(Target.SIZE_ORIGINAL))
+                    .placeholder(R.drawable.image_placeholder)
+                    .into(imageDetailView);
+
+            scaleFactor = 1.0f;
+            offsetX = 0.0f;
+            offsetY = 0.0f;
+            imageDetailView.setScaleX(scaleFactor);
+            imageDetailView.setScaleY(scaleFactor);
+            imageDetailView.setTranslationX(offsetX);
+            imageDetailView.setTranslationY(offsetY);
+        } else {
+            Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
         }
     }
 }

@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 0x1045;
     private static final String TAG = "MainActivity>>";
 
-    private List<MediaStoreImage> images;
+    //private List<MediaStoreImage> images;
     RecyclerView recyclerView;
     //Observer in case of the images inside the storage change
     ContentObserver contentObserver;
@@ -84,14 +84,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImages(){
         if (haveStoragePermission()){
-            loadImages();
+            List<MediaStoreImage> images = loadImages();
+            // Load images into the singleton
+            ImageManager.getInstance().setImageList(images);
 
-            GalleryAdapter galleryAdapter = new GalleryAdapter(this, images);
+            // GalleryAdapter read images from singleton
+            GalleryAdapter galleryAdapter = new GalleryAdapter(this);
             recyclerView = findViewById(R.id.gallery);
             GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
             recyclerView.setLayoutManager(gridLayoutManager);
             recyclerView.setAdapter(galleryAdapter);
-
         }
     }
 
@@ -150,9 +152,12 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void loadImages(){
-        images = queryImages();
+    private List<MediaStoreImage> loadImages(){
+        List<MediaStoreImage> images = queryImages();
+
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
+
+        // This didn't work yet
         if (contentObserver == null){
             contentObserver = new ContentObserver(null) {
                 @Override
@@ -167,11 +172,11 @@ public class MainActivity extends AppCompatActivity {
                     contentObserver
             );
         }
+        return images;
     }
 
     private List<MediaStoreImage> queryImages() {
         LinkedList<MediaStoreImage> imageList = new LinkedList<MediaStoreImage>();
-
         //A key concept when working with Android [ContentProvider]s is something called
         //"projections". A projection is the list of columns to request from the provider,
         //and can be thought of (quite accurately) as the "SELECT ..." clause of a SQL
@@ -267,12 +272,7 @@ public class MainActivity extends AppCompatActivity {
                             contentUri
                     );
 
-                    imageList.add(image);
-                    //Log.i(TAG, String.format("Added image: %s", displayName));
-
-//                    if (imageList.size() == maxImages){
-//                        break;
-//                    }
+                     imageList.add(image);
                 }
             } catch (IllegalArgumentException e){
                 Log.e(TAG, e.toString());

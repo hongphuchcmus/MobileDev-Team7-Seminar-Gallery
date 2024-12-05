@@ -60,9 +60,9 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
         }
     }
 
-    public GalleryAdapter(Context context, List<MediaStoreImage> images) {
-        Log.i(TAG, "on");
+    public GalleryAdapter(Context context) {
         this.context = context;
+        List<MediaStoreImage> images = ImageManager.getInstance().getImageList();
         content = new LinkedList<Object>();
         // Assuming that the images were ordered by dates, in descending order (from the newest to the oldest),
         // we can group the images by adding the headers at the start of the list and for every position in which
@@ -83,13 +83,11 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                 content.add(images.get(i));
             }
         }
-
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Create a layout for each image
         if (viewType == HEADER){
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.image_header_layout, parent, false);
@@ -118,9 +116,10 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                         Bundle bundle = new Bundle();
 
                         bundle.putLong("imgId", mediaStoreImage.id);
-                        bundle.putString("imgDisplayName", mediaStoreImage.displayName);
-                        bundle.putLong("imgDateAddedMillis", mediaStoreImage.dateAdded.getTime());
-                        bundle.putString("imgUri", mediaStoreImage.contentUri.toString());
+                        // Deprecated
+//                        bundle.putString("imgDisplayName", mediaStoreImage.displayName);
+//                        bundle.putLong("imgDateAddedMillis", mediaStoreImage.dateAdded.getTime());
+//                        bundle.putString("imgUri", mediaStoreImage.contentUri.toString());
 
                         intent.putExtras(bundle);
 
