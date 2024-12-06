@@ -51,9 +51,6 @@ public class ImageDetailActivity extends AppCompatActivity {
 //        Date imgDateAdded = new Date(imgDateAddedMillis);
 //        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
 
-        long imgId = getIntent().getLongExtra("imgId", 0);
-        imgIndex = ImageManager.getInstance().getImageIndexById(imgId); //new MediaStoreImage(imgId, imgDisplayName, imgDateAdded, imgUri);
-      
         if (imgIndex < 0){
             Toast.makeText(this, "Error loading image with id " + imgId, Toast.LENGTH_LONG).show();
             return;

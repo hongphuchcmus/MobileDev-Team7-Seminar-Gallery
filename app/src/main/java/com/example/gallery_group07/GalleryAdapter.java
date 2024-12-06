@@ -60,9 +60,8 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
         }
     }
 
-    public GalleryAdapter(Context context) {
+    public GalleryAdapter(Context context, List<MediaStoreImage> images) {
         this.context = context;
-        List<MediaStoreImage> images = ImageManager.getInstance().getImageList();
         content = new LinkedList<Object>();
         // Assuming that the images were ordered by dates, in descending order (from the newest to the oldest),
         // we can group the images by adding the headers at the start of the list and for every position in which

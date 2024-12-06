@@ -80,9 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImages(){
         if (haveStoragePermission()){
-            List<MediaStoreImage> images = loadImages();
-            // Load images into the singleton
-            ImageManager.getInstance().setImageList(images);
+            loadImages();
 
 
             GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
@@ -192,7 +190,6 @@ public class MainActivity extends AppCompatActivity {
                     contentObserver
             );
         }
-        return images;
     }
 
     private List<MediaStoreImage> queryImages() {
