@@ -80,14 +80,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImages(){
         if (haveStoragePermission()){
-            loadImages();
+            List<MediaStoreImage> images = loadImages();
+            // Load images into the singleton
+            ImageManager.getInstance().setImageList(images);
+
 
             GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
+
             recyclerView = findViewById(R.id.gallery);
             GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
             recyclerView.setLayoutManager(gridLayoutManager);
             recyclerView.setAdapter(galleryAdapter);
-
         }
     }
 
@@ -173,6 +176,8 @@ public class MainActivity extends AppCompatActivity {
         ImageManager.getInstance().setImageList(images);
 
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
+
+        // This didn't work yet
         if (contentObserver == null){
             contentObserver = new ContentObserver(null) {
                 @Override
@@ -187,11 +192,11 @@ public class MainActivity extends AppCompatActivity {
                     contentObserver
             );
         }
+        return images;
     }
 
     private List<MediaStoreImage> queryImages() {
         LinkedList<MediaStoreImage> imageList = new LinkedList<MediaStoreImage>();
-
         //A key concept when working with Android [ContentProvider]s is something called
         //"projections". A projection is the list of columns to request from the provider,
         //and can be thought of (quite accurately) as the "SELECT ..." clause of a SQL
@@ -287,12 +292,7 @@ public class MainActivity extends AppCompatActivity {
                             contentUri
                     );
 
-                    imageList.add(image);
-                    //Log.i(TAG, String.format("Added image: %s", displayName));
-
-//                    if (imageList.size() == maxImages){
-//                        break;
-//                    }
+                     imageList.add(image);
                 }
             } catch (IllegalArgumentException e){
                 Log.e(TAG, e.toString());

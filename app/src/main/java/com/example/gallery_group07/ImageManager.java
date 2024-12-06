@@ -1,7 +1,6 @@
 package com.example.gallery_group07;
 
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.gallery_group07.MediaStoreImage;
 
 import java.util.LinkedList;
@@ -10,7 +9,6 @@ import java.util.List;
 public class ImageManager {
     private static ImageManager instance = null;
     private static List<MediaStoreImage> imgList;
-
 
     private ImageManager(){
         imgList = new LinkedList<MediaStoreImage>();
