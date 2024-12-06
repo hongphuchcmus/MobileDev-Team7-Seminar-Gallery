@@ -30,6 +30,7 @@ public class ImageDetailActivity extends AppCompatActivity {
     private GestureDetector spanGestureDetector;
 
     // Image state
+    private int imgIndex = 0;
     private float scaleFactor = 1.0f;
     private float offsetX = 0.0f;
     private float offsetY = 0.0f;
@@ -42,12 +43,13 @@ public class ImageDetailActivity extends AppCompatActivity {
 
 
         long imgId = getIntent().getLongExtra("imgId", 0);
-        String imgDisplayName = getIntent().getStringExtra("imgDisplayName");
-        long imgDateAddedMillis = getIntent().getLongExtra("imgDateAddedMillis", 0);
-        Date imgDateAdded = new Date(imgDateAddedMillis);
-        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
+//        String imgDisplayName = getIntent().getStringExtra("imgDisplayName");
+//        long imgDateAddedMillis = getIntent().getLongExtra("imgDateAddedMillis", 0);
+//        Date imgDateAdded = new Date(imgDateAddedMillis);
+//        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
 
-        MediaStoreImage image = new MediaStoreImage(imgId, imgDisplayName, imgDateAdded, imgUri);
+        imgIndex = ImageManager.getInstance().getImageIndexById(imgId); //new MediaStoreImage(imgId, imgDisplayName, imgDateAdded, imgUri);
+        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
 
         setTitle(image.displayName);
 

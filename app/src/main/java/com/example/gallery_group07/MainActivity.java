@@ -5,15 +5,11 @@ import android.content.ContentUris;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.util.Log;
-
-import com.example.gallery_group07.MediaStoreImage;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,9 +18,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +31,6 @@ import android.provider.Settings;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
 import android.widget.Toast;
 
 
@@ -45,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 0x1045;
     private static final String TAG = "MainActivity>>";
 
-    private List<MediaStoreImage> images;
     RecyclerView recyclerView;
     //Observer in case of the images inside the storage change
     ContentObserver contentObserver;
@@ -90,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         if (haveStoragePermission()){
             loadImages();
 
-            GalleryAdapter galleryAdapter = new GalleryAdapter(this, images);
+            GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
             recyclerView = findViewById(R.id.gallery);
             GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
             recyclerView.setLayoutManager(gridLayoutManager);
@@ -107,13 +99,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(item.getItemId() == R.id.menu_favorite) {
-            Intent favoriteIntent = new Intent(MainActivity.this, FavoriteActivity.class);
+        if(item.getItemId() == R.id.menu_favorites) {
+            Intent favoriteIntent = new Intent(MainActivity.this, FavoritesActivity.class);
             startActivity(favoriteIntent);
             return true;
         } else if(item.getItemId() == R.id.menu_trash) {
-            Intent trashIntent = new Intent(MainActivity.this, TrashActivity.class);
-            startActivity(trashIntent);
+//            Intent trashIntent = new Intent(MainActivity.this, TrashActivity.class);
+//            startActivity(trashIntent);
             return true;
         } else {
             return super.onOptionsItemSelected(item);
@@ -176,7 +168,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadImages(){
-        images = queryImages();
+        List<MediaStoreImage> images = queryImages();
+        // Load images into ImageManager
+        ImageManager.getInstance().setImageList(images);
+
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
         if (contentObserver == null){
             contentObserver = new ContentObserver(null) {
