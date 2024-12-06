@@ -31,10 +31,10 @@
             android:name=".ImageDetailActivity"
             android:exported="true">
         </activity>
-<!--        <activity-->
-<!--            android:name=".TrashActivity"-->
-<!--            android:exported="true">-->
-<!--        </activity>-->
+        <activity
+            android:name=".ImageGalleryActivity"
+            android:exported="true">
+        </activity>
         <activity
             android:name=".FavoritesActivity"
             android:exported="true">

@@ -89,11 +89,11 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == HEADER){
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.image_header_layout, parent, false);
+                    .inflate(R.layout.image_header_list, parent, false);
             return new ViewHolder(view, R.id.img_header);
         } else {
             View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.image_layout, parent, false);
+                    .inflate(R.layout.item_image_list, parent, false);
 
             return new ViewHolder(view, R.id.img);
         }
@@ -112,6 +112,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                         Log.i(TAG, String.format("Viewing %s", mediaStoreImage.displayName));
 
                         Intent intent = new Intent(context, ImageDetailActivity.class);
+                        //Intent intent = new Intent(context, ImageGalleryActivity.class);
                         Bundle bundle = new Bundle();
 
                         bundle.putLong("imgId", mediaStoreImage.id);

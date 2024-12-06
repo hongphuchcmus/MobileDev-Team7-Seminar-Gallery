@@ -42,4 +42,5 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     implementation(libs.glide)
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
 }

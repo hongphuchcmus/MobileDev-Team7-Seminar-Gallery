@@ -52,6 +52,9 @@ public class ImageManager {
     }
 
     public MediaStoreImage getImage(int index){
+        if (index < 0 || index > imgList.size()-1){
+            return null;
+        }
         return imgList.get(index);
     }
 
