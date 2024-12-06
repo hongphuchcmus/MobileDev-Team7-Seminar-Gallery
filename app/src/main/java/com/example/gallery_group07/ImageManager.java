@@ -1,5 +1,6 @@
 package com.example.gallery_group07;
 
+import androidx.recyclerview.widget.RecyclerView;
 import com.example.gallery_group07.MediaStoreImage;
 
 import java.util.LinkedList;
@@ -52,5 +53,9 @@ public class ImageManager {
 
     public MediaStoreImage getImage(int index){
         return imgList.get(index);
+    }
+
+    public int getImageListSize(){
+        return imgList.size();
     }
 }

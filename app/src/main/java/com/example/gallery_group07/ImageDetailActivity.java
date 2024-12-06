@@ -1,15 +1,13 @@
 package com.example.gallery_group07;
 
-import android.app.ActionBar;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -24,7 +22,6 @@ import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -54,7 +51,9 @@ public class ImageDetailActivity extends AppCompatActivity {
 //        Date imgDateAdded = new Date(imgDateAddedMillis);
 //        Uri imgUri = Uri.parse(getIntent().getStringExtra("imgUri"));
 
-
+        long imgId = getIntent().getLongExtra("imgId", 0);
+        imgIndex = ImageManager.getInstance().getImageIndexById(imgId); //new MediaStoreImage(imgId, imgDisplayName, imgDateAdded, imgUri);
+      
         if (imgIndex < 0){
             Toast.makeText(this, "Error loading image with id " + imgId, Toast.LENGTH_LONG).show();
             return;
@@ -77,6 +76,51 @@ public class ImageDetailActivity extends AppCompatActivity {
 
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener(this));
         spanGestureDetector = new GestureDetector(this, new SpanListener(this));
+
+        ImageButton deleteButton = findViewById(R.id.btn_delete);
+        ImageButton favoriteButton = findViewById(R.id.btn_favorite);
+        ImageButton shareButton = findViewById(R.id.btn_share);
+
+//        deleteButton.setOnClickListener(v -> moveToTrash(image));
+        favoriteButton.setOnClickListener(v -> markAsFavorite(image));
+        shareButton.setOnClickListener(v -> shareImage(image));
+
+
+        SharedPreferences preferences = getSharedPreferences("image_favorites", MODE_PRIVATE);
+        boolean isFavorite = preferences.getBoolean(String.valueOf(image.id), false);
+        if (isFavorite) {
+            favoriteButton.setImageResource(R.drawable.ic_favorite);
+        } else {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+        }
+    }
+
+    private void markAsFavorite(MediaStoreImage currentImage) {
+        SharedPreferences preferences = getSharedPreferences("image_favorites", MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+
+        ImageButton favoriteButton = findViewById(R.id.btn_favorite);
+
+        boolean isFavorite = preferences.getBoolean(String.valueOf(currentImage.id), false);
+        editor.putBoolean(String.valueOf(currentImage.id), !isFavorite);
+        editor.apply();
+
+        if (isFavorite) {
+            favoriteButton.setImageResource(R.drawable.ic_favorite_border);
+            Toast.makeText(this, "Đã bỏ yêu thích", Toast.LENGTH_SHORT).show();
+        } else {
+            favoriteButton.setImageResource(R.drawable.ic_favorite);
+            Toast.makeText(this, "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private void shareImage(MediaStoreImage currentImage) {
+        // Chia sẻ ảnh
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("image/*");
+        shareIntent.putExtra(Intent.EXTRA_STREAM, currentImage.contentUri);
+        startActivity(Intent.createChooser(shareIntent, "Chia sẻ ảnh qua"));
     }
 
     @Override

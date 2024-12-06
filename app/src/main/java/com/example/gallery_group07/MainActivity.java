@@ -5,15 +5,11 @@ import android.content.ContentUris;
 import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.util.Log;
-
-import com.example.gallery_group07.MediaStoreImage;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,9 +18,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +29,8 @@ import static android.Manifest.permission.READ_MEDIA_IMAGES;
 
 import android.provider.Settings;
 import android.content.Intent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 
@@ -42,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 0x1045;
     private static final String TAG = "MainActivity>>";
 
-    //private List<MediaStoreImage> images;
     RecyclerView recyclerView;
     //Observer in case of the images inside the storage change
     ContentObserver contentObserver;
@@ -58,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             showImages();
         }
+
     }
 
     private boolean haveStoragePermission() {
@@ -88,12 +84,34 @@ public class MainActivity extends AppCompatActivity {
             // Load images into the singleton
             ImageManager.getInstance().setImageList(images);
 
-            // GalleryAdapter read images from singleton
-            GalleryAdapter galleryAdapter = new GalleryAdapter(this);
+
+            GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
+
             recyclerView = findViewById(R.id.gallery);
             GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
             recyclerView.setLayoutManager(gridLayoutManager);
             recyclerView.setAdapter(galleryAdapter);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(item.getItemId() == R.id.menu_favorites) {
+            Intent favoriteIntent = new Intent(MainActivity.this, FavoritesActivity.class);
+            startActivity(favoriteIntent);
+            return true;
+        } else if(item.getItemId() == R.id.menu_trash) {
+//            Intent trashIntent = new Intent(MainActivity.this, TrashActivity.class);
+//            startActivity(trashIntent);
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
     }
 
@@ -152,8 +170,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private List<MediaStoreImage> loadImages(){
+    private void loadImages(){
         List<MediaStoreImage> images = queryImages();
+        // Load images into ImageManager
+        ImageManager.getInstance().setImageList(images);
 
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
 
