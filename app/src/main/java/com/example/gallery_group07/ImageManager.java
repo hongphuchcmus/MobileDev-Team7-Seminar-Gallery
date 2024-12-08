@@ -9,6 +9,7 @@ import java.util.List;
 public class ImageManager {
     private static ImageManager instance = null;
     private static List<MediaStoreImage> imgList;
+    private static List<MediaStoreImage> pendingDeleteImages;
 
     private ImageManager(){
         imgList = new LinkedList<MediaStoreImage>();
@@ -59,6 +60,19 @@ public class ImageManager {
     }
 
     public int getImageListSize(){
+        if (imgList == null){
+            return 0;
+        }
         return imgList.size();
     }
+
+    public void addPendingDeleteImage(MediaStoreImage image){
+        // There is no duplicate check
+        pendingDeleteImages.add(image);
+    }
+
+    public List<MediaStoreImage> getPendingDeleteImages(){
+        return pendingDeleteImages;
+    }
+
 }

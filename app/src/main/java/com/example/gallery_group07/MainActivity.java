@@ -12,6 +12,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -36,7 +37,6 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     private static final int READ_EXTERNAL_STORAGE_REQUEST = 0x1045;
-    private static final int DELETE_PERMISSION_REQUEST = 0x1033;
 
     private static final String TAG = "MainActivity>>";
 
@@ -50,10 +50,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setTitle("Gallery");
 
-        if (!haveStoragePermission()){
-            requestPermission();
-        } else {
+        if (haveStoragePermission()) {
             showImages();
+        } else {
+            requestPermission();
         }
 
     }
@@ -82,8 +82,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImages(){
         if (haveStoragePermission()){
-            loadImages();
-
+            if (ImageManager.getInstance().getImageListSize() == 0){
+                loadImages();
+            }
 
             GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
 
@@ -130,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
         });
         return gridLayoutManager;
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

@@ -1,23 +1,29 @@
 package com.example.gallery_group07;
 
+import android.app.RecoverableSecurityException;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
-import android.util.DisplayMetrics;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
-import android.view.animation.ScaleAnimation;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +34,7 @@ import java.util.List;
 
 public class ImageDetailActivity extends AppCompatActivity {
     public static final String TAG = "ImageDetailView>>";
+    private ActivityResultLauncher<IntentSenderRequest> deleteRequestLauncher;
 
     private ImageView visibleImageView; // The currently displayed image view
     private ScaleGestureDetector scaleGestureDetector; // Handles pinch-to-zoom
@@ -42,7 +49,6 @@ public class ImageDetailActivity extends AppCompatActivity {
     // Image state
     private boolean isScalingGestureActive = false; // Tracks zooming state
     private int imgIndex = 0; // Index of the currently displayed image
-    private float targetScaleFactor = 1.0f;
     private float scaleFactor = 1.0f; // Zoom scale
     private float offsetX = 0.0f; // Horizontal translation
     private float offsetY = 0.0f; // Vertical translation
@@ -113,6 +119,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         favoriteButton = findViewById(R.id.btn_favorite);
         shareButton = findViewById(R.id.btn_share);
 
+        deleteButton.setOnClickListener(v -> deleteImage());
         favoriteButton.setOnClickListener(v -> toggleFavoriteStatus());
         shareButton.setOnClickListener(v -> shareImage());
 
@@ -122,6 +129,20 @@ public class ImageDetailActivity extends AppCompatActivity {
         // permission to alter UI
         animationHandler = new Handler(Looper.getMainLooper());
         flingAnimationRunnable = new FlingAnimationRunnable(this);
+
+        // This launcher will run every time we want to delete an image
+        Context thisContext = this;
+        deleteRequestLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartIntentSenderForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == RESULT_OK){
+                            Toast.makeText(thisContext, "You deleted an image!", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+        );
     }
 
     private void toggleFavoriteStatus() {
@@ -146,6 +167,43 @@ public class ImageDetailActivity extends AppCompatActivity {
         shareIntent.setType("image/*");
         shareIntent.putExtra(Intent.EXTRA_STREAM, currentImage.contentUri);
         startActivity(Intent.createChooser(shareIntent, "Share image via"));
+    }
+
+    private void deleteImage(){
+        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
+        if (image == null){
+            return;
+        }
+        try {
+            // In [Build.VERSION_CODES.Q] (Android 10) and above, it isn't possible to modify
+            // or delete items in MediaStore directly, and explicit permission
+            // must usually be obtained to do this.
+            // The way it works is the OS will throw a [RecoverableSecurityException],
+            // which we can catch here. Inside there's an [IntentSender] which the
+            // activity can use to prompt the user to grant permission to the item
+            // so it can be either updated or deleted.
+            String where = String.format("%s = %s", String.valueOf(MediaStore.Images.Media._ID), String.valueOf(image.id));
+            int deletedCount = getApplication().getContentResolver().delete(
+                    image.contentUri, where, null
+            );
+            if (deletedCount == 1){
+                Log.i(TAG, String.format("Deleted image %s", image.displayName));
+            } else if (deletedCount == 0){
+                Log.e(TAG, "Deleted image no longer exists");
+            } else {
+                Log.e(TAG, "More than one images was deleted");
+            }
+        } catch (SecurityException se){
+            if (se instanceof RecoverableSecurityException){
+                RecoverableSecurityException rse = (RecoverableSecurityException) se;
+                IntentSender intentSender = rse.getUserAction().getActionIntent().getIntentSender();
+                Log.i(TAG, String.format("Attempting to delete %s, sending request", image.displayName));
+                IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(intentSender)).build(); // IntentSenderRequest is written in Kotlin, just fyi
+                deleteRequestLauncher.launch(intentSenderRequest);
+            } else {
+                Log.e(TAG, "Permission to delete image couldn't be granted");
+            }
+        }
     }
 
     private void updateDisplayedImage() {
@@ -355,21 +413,6 @@ public class ImageDetailActivity extends AppCompatActivity {
 
             // Schedule the next frame
             activity.animationHandler.postDelayed(this, activity.FRAME_DELAY_MILLIS);
-        }
-    }
-
-    private static class ScaleAnimationRunnable implements Runnable {
-        private final ImageDetailActivity activity;
-
-        public ScaleAnimationRunnable(ImageDetailActivity activity){
-            this.activity = activity;
-        }
-
-        @Override
-        public void run() {
-            if (activity == null) {
-                return; // Activity is gone; stop animation
-            }
         }
     }
 
