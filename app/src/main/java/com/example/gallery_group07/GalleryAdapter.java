@@ -112,14 +112,9 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                         Log.i(TAG, String.format("Viewing %s", mediaStoreImage.displayName));
 
                         Intent intent = new Intent(context, ImageDetailActivity.class);
-                        //Intent intent = new Intent(context, ImageGalleryActivity.class);
                         Bundle bundle = new Bundle();
 
                         bundle.putLong("imgId", mediaStoreImage.id);
-                        // Deprecated
-//                        bundle.putString("imgDisplayName", mediaStoreImage.displayName);
-//                        bundle.putLong("imgDateAddedMillis", mediaStoreImage.dateAdded.getTime());
-//                        bundle.putString("imgUri", mediaStoreImage.contentUri.toString());
 
                         intent.putExtras(bundle);
 

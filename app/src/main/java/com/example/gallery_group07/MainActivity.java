@@ -35,7 +35,9 @@ import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final int REQUEST_CODE = 0x1045;
+    private static final int READ_EXTERNAL_STORAGE_REQUEST = 0x1045;
+    private static final int DELETE_PERMISSION_REQUEST = 0x1033;
+
     private static final String TAG = "MainActivity>>";
 
     RecyclerView recyclerView;
@@ -69,11 +71,11 @@ public class MainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ActivityCompat.requestPermissions(this, new String[]{
                         READ_MEDIA_IMAGES
-                }, REQUEST_CODE);
+                }, READ_EXTERNAL_STORAGE_REQUEST);
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{
                         READ_EXTERNAL_STORAGE
-                }, REQUEST_CODE);
+                }, READ_EXTERNAL_STORAGE_REQUEST);
             }
         }
     }
@@ -133,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUEST_CODE) {
+        if (requestCode == READ_EXTERNAL_STORAGE_REQUEST) {
             // If request is cancelled, the result arrays are empty.
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission granted", Toast.LENGTH_LONG).show();

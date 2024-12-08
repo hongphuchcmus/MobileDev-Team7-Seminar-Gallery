@@ -4,10 +4,16 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.animation.ScaleAnimation;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -28,17 +34,31 @@ public class ImageDetailActivity extends AppCompatActivity {
     private GestureDetector spanGestureDetector; // Handles panning gestures
     private ViewPager2 viewPager; // Allows swiping between images
 
+    // Image manipulation settings
+    private final float FLING_MULTIPLIER = 1.0f;
+    private final float FLING_FRICTION = 10.0f;
+    private final float SCALE_SNAPPING_THRESHOLD = 0.05f;
+
     // Image state
     private boolean isScalingGestureActive = false; // Tracks zooming state
     private int imgIndex = 0; // Index of the currently displayed image
+    private float targetScaleFactor = 1.0f;
     private float scaleFactor = 1.0f; // Zoom scale
     private float offsetX = 0.0f; // Horizontal translation
     private float offsetY = 0.0f; // Vertical translation
+    private float velocityX = 0.0f; // Horizontal velocity on fling action
+    private float velocityY = 0.0f; // Vertical velocity on fling action
 
     // UI buttons
     private ImageButton deleteButton;
     private ImageButton favoriteButton;
     private ImageButton shareButton;
+
+    // Animations
+    public final long FRAME_DELAY_MILLIS = 16; // 16ms ~ 60FPS
+    public final float FRAME_DELAY_SECONDS = FRAME_DELAY_MILLIS * 0.001f; // 16ms ~ 60FPS
+    private Handler animationHandler;
+    private FlingAnimationRunnable flingAnimationRunnable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -80,8 +100,11 @@ public class ImageDetailActivity extends AppCompatActivity {
         // Intercept touch events to manage gestures
         viewPager.getChildAt(0).setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return handleTouchEvent(view, motionEvent);
+            public boolean onTouch(View view, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_UP){
+                    view.performClick();
+                }
+                return handleTouchEvent(view, event);
             }
         });
 
@@ -94,6 +117,11 @@ public class ImageDetailActivity extends AppCompatActivity {
         shareButton.setOnClickListener(v -> shareImage());
 
         updateDisplayedImage();
+
+        // This Handler will run on UI thread (main thread), therefore having
+        // permission to alter UI
+        animationHandler = new Handler(Looper.getMainLooper());
+        flingAnimationRunnable = new FlingAnimationRunnable(this);
     }
 
     private void toggleFavoriteStatus() {
@@ -133,6 +161,8 @@ public class ImageDetailActivity extends AppCompatActivity {
         scaleFactor = 1.0f;
         offsetX = 0.0f;
         offsetY = 0.0f;
+        velocityX = 0.0f;
+        velocityY = 0.0f;
 
         updateFavoriteIcon(isFavorite(image.contentUri));
         visibleImageView = getVisibleImageView();
@@ -154,9 +184,9 @@ public class ImageDetailActivity extends AppCompatActivity {
     }
 
     // IMAGE MANIPULATION
-    // ------------------
+    // --------------------------
     // Image zooming and panning
-    // ------------------
+    // --------------------------
 
     private static class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
@@ -205,6 +235,18 @@ public class ImageDetailActivity extends AppCompatActivity {
             activity.applyImageTransformations();
             return true;
         }
+
+        @Override
+        public boolean onFling(@Nullable MotionEvent e1, @NonNull MotionEvent e2, float velocityX, float velocityY) {
+            activity.velocityX = velocityX * activity.FLING_MULTIPLIER;
+            activity.velocityY = velocityY * activity.FLING_MULTIPLIER;
+            activity.startFlingAnimation();
+            return true;
+        }
+    }
+
+    private void startFlingAnimation(){
+        animationHandler.post(flingAnimationRunnable);
     }
 
     private void updateFavoriteIcon(boolean glow) {
@@ -214,6 +256,8 @@ public class ImageDetailActivity extends AppCompatActivity {
     private void applyImageTransformations(){
         // Restrict the image panning into its boundaries
         clampOffsetToBounds();
+        visibleImageView.setScaleX(scaleFactor);
+        visibleImageView.setScaleY(scaleFactor);
         visibleImageView.setTranslationX(offsetX);
         visibleImageView.setTranslationY(offsetY);
     }
@@ -253,12 +297,17 @@ public class ImageDetailActivity extends AppCompatActivity {
         if (isScalingGestureActive &&
                 (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL)) {
             isScalingGestureActive = false;
+            // Snap to original size if close enough
+            if (scaleFactor - 1.0f <= SCALE_SNAPPING_THRESHOLD){
+                scaleFactor = 1.0f;
+                applyImageTransformations();
+            }
             return true;
         }
 
         scaleGestureDetector.onTouchEvent(event);
-        if (scaleFactor > 1.0f) {
-            spanGestureDetector.onTouchEvent(event); // Pan gesture
+        if (scaleFactor > 1.0f) { // Support pan gesture when zooming-in
+            spanGestureDetector.onTouchEvent(event);
             return true;
         }
         if (isScalingGestureActive) {
@@ -267,5 +316,62 @@ public class ImageDetailActivity extends AppCompatActivity {
 
         return view.onTouchEvent(event); // Default view pager handling
     }
+
+    // ANIMATIONS
+    // --------------
+    // Smoothing animation for manipulation gestures
+    // --------------
+
+    private static class FlingAnimationRunnable implements Runnable {
+        private final ImageDetailActivity activity;
+
+        public FlingAnimationRunnable(ImageDetailActivity activity) {
+            this.activity = activity;
+        }
+
+        @Override
+        public void run() {
+            if (activity == null) {
+                return; // Activity is gone; stop animation
+            }
+
+            // If the velocity is small enough, stop the animation
+            if (Math.abs(activity.velocityX) < 0.5f && Math.abs(activity.velocityY) < 0.5f) {
+                activity.velocityX = 0f;
+                activity.velocityY = 0f;
+                return;
+            }
+
+            // Apply friction
+            float friction = Math.max(0f, 1.0f - activity.FLING_FRICTION * activity.FRAME_DELAY_SECONDS);
+            activity.velocityX *= friction;
+            activity.velocityY *= friction;
+
+            // Update offsets
+            activity.offsetX += activity.velocityX * activity.FRAME_DELAY_SECONDS;
+            activity.offsetY += activity.velocityY * activity.FRAME_DELAY_SECONDS;
+
+            activity.applyImageTransformations();
+
+            // Schedule the next frame
+            activity.animationHandler.postDelayed(this, activity.FRAME_DELAY_MILLIS);
+        }
+    }
+
+    private static class ScaleAnimationRunnable implements Runnable {
+        private final ImageDetailActivity activity;
+
+        public ScaleAnimationRunnable(ImageDetailActivity activity){
+            this.activity = activity;
+        }
+
+        @Override
+        public void run() {
+            if (activity == null) {
+                return; // Activity is gone; stop animation
+            }
+        }
+    }
+
 }
 
