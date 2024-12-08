@@ -67,7 +67,7 @@ public class ImageManager {
     }
 
     public void addPendingDeleteImage(MediaStoreImage image){
-        // There is no duplicate check
+        // There is no duplicate check yet
         pendingDeleteImages.add(image);
     }
 

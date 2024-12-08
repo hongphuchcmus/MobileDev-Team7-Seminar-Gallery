@@ -1,11 +1,13 @@
 package com.example.gallery_group07;
 
+import android.app.PendingIntent;
 import android.app.RecoverableSecurityException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,6 +32,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class ImageDetailActivity extends AppCompatActivity {
@@ -174,14 +178,24 @@ public class ImageDetailActivity extends AppCompatActivity {
         if (image == null){
             return;
         }
+        // In [Build.VERSION_CODES.R] (Android 11) and above, it's much easier
+        // to modify MediaStore's files
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+            Uri[] uris = {image.contentUri};
+            PendingIntent pendingIntent = MediaStore.createDeleteRequest(getContentResolver(), Arrays.asList(uris));
+            IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(pendingIntent.getIntentSender())).build();
+            deleteRequestLauncher.launch(intentSenderRequest);
+            return;
+        }
+
+        // In [Build.VERSION_CODES.Q] (Android 10) and above, it isn't possible to modify
+        // or delete items in MediaStore directly, and explicit permission
+        // must usually be obtained to do this.
+        // The way it works is the OS will throw a [RecoverableSecurityException],
+        // which we can catch here. Inside there's an [IntentSender] which the
+        // activity can use to prompt the user to grant permission to the item
+        // so it can be either updated or deleted.
         try {
-            // In [Build.VERSION_CODES.Q] (Android 10) and above, it isn't possible to modify
-            // or delete items in MediaStore directly, and explicit permission
-            // must usually be obtained to do this.
-            // The way it works is the OS will throw a [RecoverableSecurityException],
-            // which we can catch here. Inside there's an [IntentSender] which the
-            // activity can use to prompt the user to grant permission to the item
-            // so it can be either updated or deleted.
             String where = String.format("%s = %s", String.valueOf(MediaStore.Images.Media._ID), String.valueOf(image.id));
             int deletedCount = getApplication().getContentResolver().delete(
                     image.contentUri, where, null
@@ -197,7 +211,7 @@ public class ImageDetailActivity extends AppCompatActivity {
             if (se instanceof RecoverableSecurityException){
                 RecoverableSecurityException rse = (RecoverableSecurityException) se;
                 IntentSender intentSender = rse.getUserAction().getActionIntent().getIntentSender();
-                Log.i(TAG, String.format("Attempting to delete %s, sending request", image.displayName));
+                Log.i(TAG, String.format("Attempting to delete image %s, sending a request", image.displayName));
                 IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(intentSender)).build(); // IntentSenderRequest is written in Kotlin, just fyi
                 deleteRequestLauncher.launch(intentSenderRequest);
             } else {
