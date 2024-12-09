@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -36,11 +37,12 @@ import android.widget.Toast;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final int READ_EXTERNAL_STORAGE_REQUEST = 0x1045;
+        private static final int READ_EXTERNAL_STORAGE_REQUEST = 0x1045;
 
     private static final String TAG = "MainActivity>>";
 
-    RecyclerView recyclerView;
+    private RecyclerView recyclerView;
+    private GalleryAdapter recyclerViewAdapter;
     //Observer in case of the images inside the storage change
     ContentObserver contentObserver;
 
@@ -82,16 +84,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImages(){
         if (haveStoragePermission()){
-            if (ImageManager.getInstance().getImageListSize() == 0){
-                loadImages();
-            }
+            loadImages();
 
-            GalleryAdapter galleryAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
+            recyclerViewAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
 
             recyclerView = findViewById(R.id.gallery);
-            GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
+            GridLayoutManager gridLayoutManager = getGridLayoutManager(recyclerViewAdapter);
             recyclerView.setLayoutManager(gridLayoutManager);
-            recyclerView.setAdapter(galleryAdapter);
+            recyclerView.setAdapter(recyclerViewAdapter);
         }
     }
 
@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public int getSpanSize(int position) {
                 int viewType = galleryAdapter.getItemViewType(position);
-                if (viewType == GalleryAdapter.HEADER){
+                if (viewType == GalleryGridItem.TYPE_HEADER){
                     return 4; // Let a header span a fully row
                 } else {
                     return 1;
@@ -176,15 +176,26 @@ public class MainActivity extends AppCompatActivity {
         List<MediaStoreImage> images = queryImages();
         // Load images into ImageManager
         ImageManager.getInstance().setImageList(images);
+        ImageManager.getInstance().addImageListChangeListener(
+                new ImageManager.ImageListChangeListener() {
+                    @Override
+                    public void onImageRemoved(MediaStoreImage image) {
+                        recyclerViewAdapter.update(ImageManager.getInstance().getImageList());
+                    }
+                }
+        );
 
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
 
-        // This didn't work yet
-        if (contentObserver == null){
-            contentObserver = new ContentObserver(null) {
+        // This will take care of the new pictures being added to the storage
+        // But since it won't detect if the changes was from this app or not
+        // (i.e when we delete images ourselves), I have to temporarily comment it
+        /*if (contentObserver == null){
+            contentObserver = new ContentObserver(new Handler()) {
                 @Override
                 public void onChange(boolean selfChange) {
                     super.onChange(selfChange);
+                    Log.i(TAG, "Changes detected on external media");
                     loadImages();
                 }
             };
@@ -193,7 +204,8 @@ public class MainActivity extends AppCompatActivity {
                     true,
                     contentObserver
             );
-        }
+        }*/
+
     }
 
     private List<MediaStoreImage> queryImages() {
@@ -208,9 +220,9 @@ public class MainActivity extends AppCompatActivity {
         //For this sample, we only use a few columns of data, and so we'll request just a
         //subset of columns.
         String[] projection = {
-                MediaStore.Images.ImageColumns._ID,
-                MediaStore.Images.ImageColumns.DISPLAY_NAME,
-                MediaStore.Images.ImageColumns.DATE_ADDED
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.DATE_ADDED
         };
 
         //The `selection` is the "WHERE ..." clause of a SQL statement. It's also possible
@@ -254,9 +266,9 @@ public class MainActivity extends AppCompatActivity {
             // to avoid having to look them up for each row.
 
             try {
-                int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns._ID);
-                int displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DISPLAY_NAME);
-                int dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.DATE_ADDED);
+                int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
+                int displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
+                int dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED);
 
                 Log.i(TAG, String.format("Found %d image(s)", cursor.getCount()));
 //                int maxImages = 500;

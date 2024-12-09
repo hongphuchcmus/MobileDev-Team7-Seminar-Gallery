@@ -9,6 +9,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.helper.widget.Grid;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -23,11 +25,8 @@ import android.util.Log;
 import android.widget.TextView;
 
 public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHolder> {
-    public static final int IMAGE = 0;
-    public static final int HEADER = 1;
-
-    private List<Object> content;
-    private Context context;
+    private final List<GalleryGridItem> content;
+    private final Context context;
 
     public static final String TAG = "GalleryAdapter>>";
 
@@ -53,41 +52,44 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
 
     @Override
     public int getItemViewType(int position) {
-        if (content.get(position) instanceof String){
-            return HEADER;
-        } else {
-            return IMAGE;
-        }
+        return content.get(position).getType();
     }
 
     public GalleryAdapter(Context context, List<MediaStoreImage> images) {
         this.context = context;
-        content = new LinkedList<Object>();
-        // Assuming that the images were ordered by dates, in descending order (from the newest to the oldest),
-        // we can group the images by adding the headers at the start of the list and for every position in which
-        // the date of the images changed
+        content = createHeaderAndImageItems(images);
+    }
+
+     /*
+     Assuming that the images were ordered by dates, in descending order (from the newest to the oldest),
+     we can group the images by adding the headers at the start of the list and for every position in which
+     the date of the images changed
+     */
+    private List<GalleryGridItem> createHeaderAndImageItems(List<MediaStoreImage> images){
+        List<GalleryGridItem> newContent = new LinkedList<>();
         if (!images.isEmpty()) {
             // E.g: 20 - Nov - 2024
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd - MMM - yyyy", Locale.getDefault());
             String lastDate = dateFormat.format(images.get(0).dateAdded);
-            content.add(lastDate);
-            content.add(images.get(0));
+            newContent.add(new GalleryGridItem(GalleryGridItem.TYPE_HEADER, lastDate));
+            newContent.add(new GalleryGridItem(GalleryGridItem.TYPE_IMAGE, images.get(0)));
 
             for (int i = 1; i < images.size(); i++) {
-                String currentImgDate = dateFormat.format(images.get(i).dateAdded);
-                if (!currentImgDate.equals(lastDate)){
-                    content.add(currentImgDate);
-                    lastDate = currentImgDate;
+                String imgDate = dateFormat.format(images.get(i).dateAdded);
+                if (!imgDate.equals(lastDate)){
+                    newContent.add(new GalleryGridItem(GalleryGridItem.TYPE_HEADER, imgDate));
+                    lastDate = imgDate;
                 }
-                content.add(images.get(i));
+                newContent.add(new GalleryGridItem(GalleryGridItem.TYPE_IMAGE,  images.get(i)));
             }
         }
+        return newContent;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == HEADER){
+        if (viewType == GalleryGridItem.TYPE_HEADER){
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.image_header_list, parent, false);
             return new ViewHolder(view, R.id.img_header);
@@ -102,8 +104,8 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
     // Replace the content of each view (invoked by Layout Manager)
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        if (getItemViewType(position) == IMAGE){
-            MediaStoreImage mediaStoreImage = (MediaStoreImage) content.get(position);
+        if (getItemViewType(position) == GalleryGridItem.TYPE_IMAGE){
+            MediaStoreImage mediaStoreImage = (MediaStoreImage) content.get(position).getData();
             holder.getRootView().setTag(mediaStoreImage);
 
             holder.getRootView().setOnClickListener(new View.OnClickListener() {
@@ -131,7 +133,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                     .into(imageView);
         } else{
             TextView textView = (TextView) holder.getChildView();
-            textView.setText((String) content.get(position));
+            textView.setText((String) content.get(position).getData());
         }
     }
 
@@ -139,5 +141,15 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
     public int getItemCount() {
         return content.size();
     }
+
+    public void update(List<MediaStoreImage> images){
+        List<GalleryGridItem> newContent = createHeaderAndImageItems(images);
+        Log.i(TAG, String.format("Old size: %d -> New size: %d", content.size(), newContent.size()));
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new GallerGridItemDiffUtilCallback(content, newContent));
+        content.clear();
+        content.addAll(newContent);
+        diffResult.dispatchUpdatesTo(this);
+    }
+
 }
 

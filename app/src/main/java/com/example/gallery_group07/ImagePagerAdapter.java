@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DecodeFormat;
@@ -46,6 +47,10 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
                 .into(holder.imageView);
     }
 
+    public List<MediaStoreImage> getImages() {
+        return images;
+    }
+
     @Override
     public int getItemCount() {
         return images.size();
@@ -58,5 +63,12 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
             super(itemView);
             imageView = itemView.findViewById(R.id.img_detail_view);
         }
+    }
+
+    public void update(List<MediaStoreImage> newImages) {
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new ImageDiffUtilCallBack(images, newImages));
+        images.clear();
+        images.addAll(newImages);
+        diffResult.dispatchUpdatesTo(this);
     }
 }

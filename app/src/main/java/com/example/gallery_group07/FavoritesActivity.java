@@ -55,7 +55,7 @@ public class FavoritesActivity extends AppCompatActivity {
             @Override
             public int getSpanSize(int position) {
                 int viewType = galleryAdapter.getItemViewType(position);
-                if (viewType == GalleryAdapter.HEADER){
+                if (viewType == GalleryGridItem.TYPE_HEADER){
                     return 4; // Let a header span a fully row
                 } else {
                     return 1;

@@ -29,21 +29,23 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ImageDetailActivity extends AppCompatActivity {
-    public static final String TAG = "ImageDetailView>>";
+    public static final String TAG = "ImageDetailActivity>>";
     private ActivityResultLauncher<IntentSenderRequest> deleteRequestLauncher;
 
     private ImageView visibleImageView; // The currently displayed image view
     private ScaleGestureDetector scaleGestureDetector; // Handles pinch-to-zoom
     private GestureDetector spanGestureDetector; // Handles panning gestures
     private ViewPager2 viewPager; // Allows swiping between images
+    private ImagePagerAdapter viewPagerAdapter;
 
     // Image manipulation settings
     private final float FLING_MULTIPLIER = 1.0f;
@@ -53,6 +55,7 @@ public class ImageDetailActivity extends AppCompatActivity {
     // Image state
     private boolean isScalingGestureActive = false; // Tracks zooming state
     private int imgIndex = 0; // Index of the currently displayed image
+    private MediaStoreImage currentImage;
     private float scaleFactor = 1.0f; // Zoom scale
     private float offsetX = 0.0f; // Horizontal translation
     private float offsetY = 0.0f; // Vertical translation
@@ -84,14 +87,13 @@ public class ImageDetailActivity extends AppCompatActivity {
             return;
         }
 
-        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
-        setTitle(image.displayName);
+        currentImage = ImageManager.getInstance().getImage(imgIndex);
+        setTitle(currentImage.displayName);
 
         // Initialize ViewPager to display images
         viewPager = findViewById(R.id.viewPager);
-        List<MediaStoreImage> images = ImageManager.getInstance().getImageList();
-        ImagePagerAdapter adapter = new ImagePagerAdapter(this, images);
-        viewPager.setAdapter(adapter);
+        viewPagerAdapter = new ImagePagerAdapter(this, ImageManager.getInstance().getImageList());
+        viewPager.setAdapter(viewPagerAdapter);
         viewPager.setCurrentItem(imgIndex, false);
 
         // Update content when the displayed page changes
@@ -111,7 +113,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         viewPager.getChildAt(0).setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP){
+                if (event.getAction() == MotionEvent.ACTION_UP) {
                     view.performClick();
                 }
                 return handleTouchEvent(view, event);
@@ -141,8 +143,15 @@ public class ImageDetailActivity extends AppCompatActivity {
                 new ActivityResultCallback<ActivityResult>() {
                     @Override
                     public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == RESULT_OK){
-                            Toast.makeText(thisContext, "You deleted an image!", Toast.LENGTH_LONG).show();
+                        if (result.getResultCode() == RESULT_OK) {
+                            Log.i(TAG, "Deletion request granted");
+                            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+                                performDeleteImageLegacy(currentImage); // Re-run the delete operation
+                            }
+                            onPostImageDeletion(currentImage);
+                        } else {
+                            Log.e(TAG, "Failed to delete the image");
+                            Toast.makeText(thisContext, "Failed to delete the image. Please try again.", Toast.LENGTH_LONG).show();
                         }
                     }
                 }
@@ -174,60 +183,91 @@ public class ImageDetailActivity extends AppCompatActivity {
     }
 
     private void deleteImage(){
-        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
-        if (image == null){
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+            performDeleteImageLegacy(currentImage);
             return;
         }
-        // In [Build.VERSION_CODES.R] (Android 11) and above, it's much easier
-        // to modify MediaStore's files
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
-            Uri[] uris = {image.contentUri};
-            PendingIntent pendingIntent = MediaStore.createDeleteRequest(getContentResolver(), Arrays.asList(uris));
-            IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(pendingIntent.getIntentSender())).build();
-            deleteRequestLauncher.launch(intentSenderRequest);
+            performDeleteImage(currentImage);
             return;
         }
+    }
 
-        // In [Build.VERSION_CODES.Q] (Android 10) and above, it isn't possible to modify
-        // or delete items in MediaStore directly, and explicit permission
-        // must usually be obtained to do this.
-        // The way it works is the OS will throw a [RecoverableSecurityException],
-        // which we can catch here. Inside there's an [IntentSender] which the
-        // activity can use to prompt the user to grant permission to the item
-        // so it can be either updated or deleted.
+    private void performDeleteImageLegacy(MediaStoreImage image){
+        if (image == null){
+            Log.e(TAG, "Image is null");
+            return;
+        }
+        /*
+         In [Build.VERSION_CODES.Q] (Android 10) and above, it isn't possible to modify
+         or delete items in MediaStore directly, and explicit permission
+         must usually be obtained to do this.
+         The way it works is the OS will throw a [RecoverableSecurityException],
+         which we can catch here. Inside there's an [IntentSender] which the
+         activity can use to prompt the user to grant permission to the item
+         so it can be either updated or deleted.
+        */
+        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.Q){
+            Log.e(TAG, "performDeleteImageLegacy() can only be used for [Build.VERSION_CODES.Q] (Android 10)");
+            return;
+        }
         try {
-            String where = String.format("%s = %s", String.valueOf(MediaStore.Images.Media._ID), String.valueOf(image.id));
-            int deletedCount = getApplication().getContentResolver().delete(
-                    image.contentUri, where, null
+            String where = MediaStore.Images.Media._ID + " = ?";
+            String[] selectionArgs = {String.valueOf(image.id)};
+            getApplication().getContentResolver().delete(
+                    image.contentUri, where, selectionArgs
             );
-            if (deletedCount == 1){
-                Log.i(TAG, String.format("Deleted image %s", image.displayName));
-            } else if (deletedCount == 0){
-                Log.e(TAG, "Deleted image no longer exists");
-            } else {
-                Log.e(TAG, "More than one images was deleted");
-            }
-        } catch (SecurityException se){
-            if (se instanceof RecoverableSecurityException){
+        } catch (SecurityException se) {
+            if (se instanceof RecoverableSecurityException) {
                 RecoverableSecurityException rse = (RecoverableSecurityException) se;
                 IntentSender intentSender = rse.getUserAction().getActionIntent().getIntentSender();
-                Log.i(TAG, String.format("Attempting to delete image %s, sending a request", image.displayName));
                 IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(intentSender)).build(); // IntentSenderRequest is written in Kotlin, just fyi
+                Log.i(TAG, String.format("Requesting permission to delete image %s", image.displayName));
                 deleteRequestLauncher.launch(intentSenderRequest);
             } else {
-                Log.e(TAG, "Permission to delete image couldn't be granted");
+                Log.e(TAG, String.format("Permission to delete image %s couldn't be granted", image.displayName));
             }
         }
     }
 
+    private void onPostImageDeletion(MediaStoreImage deletedImage){
+        List<MediaStoreImage> oldList = viewPagerAdapter.getImages();
+        List<MediaStoreImage> newList = new LinkedList<>(oldList);
+        newList.remove(deletedImage);
+        // Sync indexes with the ImageManager
+        ImageManager.getInstance().removeImage(deletedImage);
+
+        viewPagerAdapter.update(newList);
+        updateDisplayedImage();
+    }
+
+    private void performDeleteImage(MediaStoreImage image){
+        if (image == null){
+            Log.e(TAG, "Image is null");
+            return;
+        }
+        /*
+         In [Build.VERSION_CODES.R] (Android 11+) and above, it's easier to request and performing modification
+         media files
+         */
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            Log.e(TAG, "performDeleteImage() can only be used for [Build.VERSION_CODES.R] and above (Android 11+)");
+            return;
+        }
+        Uri[] uris = {image.contentUri};
+        PendingIntent pendingIntent = MediaStore.createDeleteRequest(getContentResolver(), Arrays.asList(uris));
+        IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(pendingIntent.getIntentSender())).build();
+        deleteRequestLauncher.launch(intentSenderRequest);
+    }
+
     private void updateDisplayedImage() {
-        MediaStoreImage image = ImageManager.getInstance().getImage(imgIndex);
-        if (image == null) {
+        currentImage = ImageManager.getInstance().getImage(imgIndex);
+        if (currentImage == null) {
             Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        setTitle(image.displayName);
+        setTitle(currentImage.displayName);
 
         // Reset transformations for the new image
         scaleFactor = 1.0f;
@@ -236,7 +276,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         velocityX = 0.0f;
         velocityY = 0.0f;
 
-        updateFavoriteIcon(isFavorite(image.contentUri));
+        updateFavoriteIcon(isFavorite(currentImage.contentUri));
         visibleImageView = getVisibleImageView();
         resetImageTransformations();
     }
@@ -317,7 +357,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void startFlingAnimation(){
+    private void startFlingAnimation() {
         animationHandler.post(flingAnimationRunnable);
     }
 
@@ -325,7 +365,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         favoriteButton.setImageResource(glow ? R.drawable.ic_favourite : R.drawable.ic_favourite_outline);
     }
 
-    private void applyImageTransformations(){
+    private void applyImageTransformations() {
         // Restrict the image panning into its boundaries
         clampOffsetToBounds();
         visibleImageView.setScaleX(scaleFactor);
@@ -370,7 +410,7 @@ public class ImageDetailActivity extends AppCompatActivity {
                 (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL)) {
             isScalingGestureActive = false;
             // Snap to original size if close enough
-            if (scaleFactor - 1.0f <= SCALE_SNAPPING_THRESHOLD){
+            if (scaleFactor - 1.0f <= SCALE_SNAPPING_THRESHOLD) {
                 scaleFactor = 1.0f;
                 applyImageTransformations();
             }
