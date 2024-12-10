@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.READ_MEDIA_IMAGES;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 import android.provider.Settings;
 import android.content.Intent;
@@ -64,7 +65,9 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
         } else {
-            return ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            boolean readPermission = ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            boolean writePermission = ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            return readPermission && writePermission;
         }
     }
 
@@ -72,11 +75,12 @@ public class MainActivity extends AppCompatActivity {
         if (!haveStoragePermission()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        READ_MEDIA_IMAGES
+                        READ_MEDIA_IMAGES,
                 }, READ_EXTERNAL_STORAGE_REQUEST);
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        READ_EXTERNAL_STORAGE
+                        READ_EXTERNAL_STORAGE,
+                        WRITE_EXTERNAL_STORAGE
                 }, READ_EXTERNAL_STORAGE_REQUEST);
             }
         }

@@ -18,6 +18,7 @@ public class FavoritesActivity extends AppCompatActivity {
 
     private List<MediaStoreImage> images;
     private RecyclerView recyclerView;
+    private GalleryAdapter recycleViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,13 +31,26 @@ public class FavoritesActivity extends AppCompatActivity {
     }
 
     private void loadImages(){
-        images = new LinkedList<>();
-        for (int i = 0; i <  ImageManager.getInstance().getImageListSize(); i++){
-            MediaStoreImage img = ImageManager.getInstance().getImage(i);
+        images = fetchFavoriteImages();
+        /*ImageManager.getInstance().addImageListChangeListener(
+                new ImageManager.ImageListChangeListener() {
+                    @Override
+                    public void onImageRemoved(MediaStoreImage image) {
+                        List<MediaStoreImage> newImages = fetchFavoriteImages();
+                        recycleViewAdapter.update(newImages);
+                    }
+                }
+        );*/
+    }
+
+    private List<MediaStoreImage> fetchFavoriteImages(){
+        List<MediaStoreImage> imgList = new LinkedList<>();
+        for (MediaStoreImage img : ImageManager.getInstance().getImageList()){
             if (isFavorite(img.contentUri)){
-                images.add(img);
+                imgList.add(img);
             }
         }
+        return imgList;
     }
 
     private void showImages(){

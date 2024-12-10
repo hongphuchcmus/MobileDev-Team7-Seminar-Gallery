@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,13 +31,17 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 public class ImageDetailActivity extends AppCompatActivity {
     public static final String TAG = "ImageDetailActivity>>";
@@ -69,7 +75,7 @@ public class ImageDetailActivity extends AppCompatActivity {
 
     // Animations
     public final long FRAME_DELAY_MILLIS = 16; // 16ms ~ 60FPS
-    public final float FRAME_DELAY_SECONDS = FRAME_DELAY_MILLIS * 0.001f; // 16ms ~ 60FPS
+    public final float FRAME_DELAY_SECONDS = FRAME_DELAY_MILLIS * 0.001f;
     private Handler animationHandler;
     private FlingAnimationRunnable flingAnimationRunnable;
 
@@ -113,6 +119,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         viewPager.getChildAt(0).setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
+                // Just so that Android Studio stops yelling at me
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     view.performClick();
                 }
@@ -145,9 +152,9 @@ public class ImageDetailActivity extends AppCompatActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == RESULT_OK) {
                             Log.i(TAG, "Deletion request granted");
-                            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
-                                performDeleteImageLegacy(currentImage); // Re-run the delete operation
-                            }
+//                            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+//                                performDeleteImageLegacy(currentImage); // Re-run the delete operation
+//                            }
                             onPostImageDeletion(currentImage);
                         } else {
                             Log.e(TAG, "Failed to delete the image");
@@ -182,19 +189,19 @@ public class ImageDetailActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(shareIntent, "Share image via"));
     }
 
-    private void deleteImage(){
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q){
+    private void deleteImage() {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
             performDeleteImageLegacy(currentImage);
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             performDeleteImage(currentImage);
             return;
         }
     }
 
-    private void performDeleteImageLegacy(MediaStoreImage image){
-        if (image == null){
+    private void performDeleteImageLegacy(MediaStoreImage image) {
+        if (image == null) {
             Log.e(TAG, "Image is null");
             return;
         }
@@ -207,30 +214,58 @@ public class ImageDetailActivity extends AppCompatActivity {
          activity can use to prompt the user to grant permission to the item
          so it can be either updated or deleted.
         */
-        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.Q){
+        if (Build.VERSION.SDK_INT != Build.VERSION_CODES.Q) {
             Log.e(TAG, "performDeleteImageLegacy() can only be used for [Build.VERSION_CODES.Q] (Android 10)");
             return;
         }
-        try {
-            String where = MediaStore.Images.Media._ID + " = ?";
-            String[] selectionArgs = {String.valueOf(image.id)};
-            getApplication().getContentResolver().delete(
-                    image.contentUri, where, selectionArgs
-            );
-        } catch (SecurityException se) {
-            if (se instanceof RecoverableSecurityException) {
-                RecoverableSecurityException rse = (RecoverableSecurityException) se;
-                IntentSender intentSender = rse.getUserAction().getActionIntent().getIntentSender();
-                IntentSenderRequest intentSenderRequest = (new IntentSenderRequest.Builder(intentSender)).build(); // IntentSenderRequest is written in Kotlin, just fyi
-                Log.i(TAG, String.format("Requesting permission to delete image %s", image.displayName));
-                deleteRequestLauncher.launch(intentSenderRequest);
-            } else {
-                Log.e(TAG, String.format("Permission to delete image %s couldn't be granted", image.displayName));
+
+        String deleteFilePath = "";
+
+        String[] projection = {
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DATA
+        };
+        String selection = MediaStore.Images.Media._ID + " = ?";
+        String[] selectionArgs = {String.valueOf(image.id)};
+
+        Cursor cursor = getApplication().getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selection,
+                selectionArgs,
+                null
+        );
+
+        if (cursor != null) {
+            int dataColumnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+            if (dataColumnIndex >= 0 && cursor.moveToNext()) {
+                deleteFilePath = cursor.getString(dataColumnIndex);
+                Log.i(TAG, String.format("Trying to delete physical copy of image with path %s", deleteFilePath));
             }
+            cursor.close();
+        }
+
+        if (ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+            Log.i(TAG, "Permission granted");
+        } else {
+            Log.e(TAG, "Permission denied");
+        }
+        File imgFile = new File(deleteFilePath);
+        if (imgFile.exists()){
+            boolean success = imgFile.delete();
+            Log.i(TAG, String.format("Read access: %s, Write access: %s", imgFile.canRead(), imgFile.canWrite()));
+            if (success){
+                Log.i(TAG, String.format("Successfully deleted physical copy of image with path %s", deleteFilePath));
+                onPostImageDeletion(image);
+            } else {
+                Log.e(TAG, String.format("Failed to delete physical copy of image with path %s", deleteFilePath));
+            }
+        } else {
+            Log.e(TAG, String.format("Image with path %s doesn't exist", deleteFilePath));
         }
     }
 
-    private void onPostImageDeletion(MediaStoreImage deletedImage){
+    private void onPostImageDeletion(MediaStoreImage deletedImage) {
         List<MediaStoreImage> oldList = viewPagerAdapter.getImages();
         List<MediaStoreImage> newList = new LinkedList<>(oldList);
         newList.remove(deletedImage);
@@ -241,8 +276,8 @@ public class ImageDetailActivity extends AppCompatActivity {
         updateDisplayedImage();
     }
 
-    private void performDeleteImage(MediaStoreImage image){
-        if (image == null){
+    private void performDeleteImage(MediaStoreImage image) {
+        if (image == null) {
             Log.e(TAG, "Image is null");
             return;
         }
@@ -311,6 +346,13 @@ public class ImageDetailActivity extends AppCompatActivity {
         @Override
         public boolean onScale(@NonNull ScaleGestureDetector detector) {
             // Handle pinch-to-zoom gestures manually to avoid undesired behavior
+            if (!activity.isScalingGestureActive) {
+                // This should be equivalent to onScaleStart(), but since we
+                // are manually keeping track of the scaling process,
+                // it's better to just implement it ourselves
+                // Cancel current swiping action on ViewPager
+                activity.viewPager.setCurrentItem(activity.imgIndex, false);
+            }
             activity.isScalingGestureActive = true;
 
             // Update scale and offset
@@ -402,7 +444,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         if (visibleImageView == null) {
             visibleImageView = getVisibleImageView();
             if (visibleImageView == null) {
-                return true; // View not ready
+                return true; // View was not ready yet
             }
         }
 
