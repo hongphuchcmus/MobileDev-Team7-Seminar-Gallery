@@ -14,6 +14,7 @@ import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.ImageViewHolder> {
@@ -23,7 +24,7 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
 
     public ImagePagerAdapter(Context context, List<MediaStoreImage> images) {
         this.context = context;
-        this.images = images;
+        this.images = new LinkedList<>(images);
     }
 
     @NonNull

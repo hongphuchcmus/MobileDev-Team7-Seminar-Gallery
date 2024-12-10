@@ -1,5 +1,10 @@
 package com.example.gallery_group07;
 
+import static android.content.Context.MODE_PRIVATE;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,6 +15,18 @@ public class ImageManager {
     private static ImageManager instance = null;
     private static List<MediaStoreImage> imgList;
     private final List<ImageListChangeListener> listeners = new LinkedList<>();
+
+    public MediaStoreImage getImageById(long imgId) {
+        if (imgList == null) {
+            return null;
+        }
+        for (MediaStoreImage image : imgList) {
+            if (image.id == imgId) {
+                return image;
+            }
+        }
+        return null;
+    }
 
     public interface ImageListChangeListener {
         void onImageRemoved(MediaStoreImage image);
@@ -81,5 +98,26 @@ public class ImageManager {
         }
     }
 
+    // Helper function
+    private static boolean isImageInCollection(Context context, MediaStoreImage image, String collectionName){
+        SharedPreferences preferences = context.getSharedPreferences(collectionName, MODE_PRIVATE);
+        return preferences.getBoolean(String.valueOf(image.contentUri.getLastPathSegment()), false);
+    }
 
+    public List<MediaStoreImage> getImagesInCollection(Context context, String collectionName){
+        if (imgList == null){
+            return null;
+        }
+        List<MediaStoreImage> images = new LinkedList<>();
+        for (MediaStoreImage image : imgList){
+            if (isImageInCollection(context, image, collectionName)){
+                images.add(image);
+            }
+        }
+        return images;
+    }
+
+    public void removeImageListChangeListener(ImageListChangeListener listener){
+        listeners.remove(listener);
+    }
 }

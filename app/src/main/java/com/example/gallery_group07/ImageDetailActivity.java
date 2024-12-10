@@ -1,10 +1,8 @@
 package com.example.gallery_group07;
 
 import android.app.PendingIntent;
-import android.app.RecoverableSecurityException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -32,7 +30,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -52,6 +49,9 @@ public class ImageDetailActivity extends AppCompatActivity {
     private GestureDetector spanGestureDetector; // Handles panning gestures
     private ViewPager2 viewPager; // Allows swiping between images
     private ImagePagerAdapter viewPagerAdapter;
+    private String imgCollectionName;
+    private List<MediaStoreImage> imgCollection;
+    private int imgIndex; // Index of current image in imgCollection
 
     // Image manipulation settings
     private final float FLING_MULTIPLIER = 1.0f;
@@ -60,7 +60,7 @@ public class ImageDetailActivity extends AppCompatActivity {
 
     // Image state
     private boolean isScalingGestureActive = false; // Tracks zooming state
-    private int imgIndex = 0; // Index of the currently displayed image
+    //private int imgIndex = 0; // Index of the currently displayed image
     private MediaStoreImage currentImage;
     private float scaleFactor = 1.0f; // Zoom scale
     private float offsetX = 0.0f; // Horizontal translation
@@ -84,21 +84,33 @@ public class ImageDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_detail);
 
-        // Retrieve the image ID passed to the activity
+        // Retrieve the image from its id
         long imgId = getIntent().getLongExtra("imgId", -1);
-        imgIndex = ImageManager.getInstance().getImageIndexById(imgId);
+        currentImage = ImageManager.getInstance().getImageById(imgId);
 
-        if (imgIndex < 0) {
+        if (currentImage == null){
+            Log.e(TAG, "Image with id " + imgId + " doesn't exist");
             Toast.makeText(this, "Error loading image with id " + imgId, Toast.LENGTH_LONG).show();
             return;
         }
 
-        currentImage = ImageManager.getInstance().getImage(imgIndex);
+        // Retrieve collection the image is in
+        imgCollectionName = getIntent().getStringExtra("imgCollectionName");
+        imgCollection = fetchImagesFromCollection(imgCollectionName);
+        Log.i(TAG, String.format("collection: %s , size: %d", imgCollectionName, imgCollection.size()));
+        imgIndex = imgCollection.indexOf(currentImage);
+
+        if (imgIndex < 0) {
+            Log.e(TAG, "Cannot find the image with id " + imgId + " in its collection");
+            Toast.makeText(this, "Error loading image with id " + imgId, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         setTitle(currentImage.displayName);
 
         // Initialize ViewPager to display images
         viewPager = findViewById(R.id.viewPager);
-        viewPagerAdapter = new ImagePagerAdapter(this, ImageManager.getInstance().getImageList());
+        viewPagerAdapter = new ImagePagerAdapter(this, imgCollection);
         viewPager.setAdapter(viewPagerAdapter);
         viewPager.setCurrentItem(imgIndex, false);
 
@@ -116,6 +128,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         spanGestureDetector = new GestureDetector(this, new SpanListener(this));
 
         // Intercept touch events to manage gestures
+        // viewPager.getChildAt(0) returns the RecycleView
         viewPager.getChildAt(0).setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -165,9 +178,14 @@ public class ImageDetailActivity extends AppCompatActivity {
         );
     }
 
-    private void toggleFavoriteStatus() {
-        MediaStoreImage currentImage = ImageManager.getInstance().getImage(imgIndex);
+    private List<MediaStoreImage> fetchImagesFromCollection(String collection){
+        if (collection == null || collection.isEmpty()){
+            return ImageManager.getInstance().getImageList();
+        }
+        return ImageManager.getInstance().getImagesInCollection(this, collection);
+    }
 
+    private void toggleFavoriteStatus() {
         // Toggle favorite status and save it in preferences
         SharedPreferences preferences = getSharedPreferences("image_favorites", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -180,8 +198,6 @@ public class ImageDetailActivity extends AppCompatActivity {
     }
 
     private void shareImage() {
-        MediaStoreImage currentImage = ImageManager.getInstance().getImage(imgIndex);
-
         // Create an intent to share the image
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("image/*");
@@ -269,7 +285,9 @@ public class ImageDetailActivity extends AppCompatActivity {
         List<MediaStoreImage> oldList = viewPagerAdapter.getImages();
         List<MediaStoreImage> newList = new LinkedList<>(oldList);
         newList.remove(deletedImage);
-        // Sync indexes with the ImageManager
+
+        imgCollection.remove(deletedImage);
+        // Removing image from manager to signal other grid activities
         ImageManager.getInstance().removeImage(deletedImage);
 
         viewPagerAdapter.update(newList);
@@ -296,9 +314,9 @@ public class ImageDetailActivity extends AppCompatActivity {
     }
 
     private void updateDisplayedImage() {
-        currentImage = ImageManager.getInstance().getImage(imgIndex);
+        currentImage = imgCollection.get(imgIndex);
         if (currentImage == null) {
-            Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Update failed. Cannot find image with index " + imgIndex + " in the collection", Toast.LENGTH_SHORT).show();
             return;
         }
 

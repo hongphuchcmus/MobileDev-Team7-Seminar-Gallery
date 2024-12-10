@@ -15,10 +15,11 @@ import java.util.List;
 
 public class FavoritesActivity extends AppCompatActivity {
     private static final String TAG = "FavoriteImagesActivity>>";
-
+    public static final String COLLECTION = "image_favorites";
     private List<MediaStoreImage> images;
     private RecyclerView recyclerView;
     private GalleryAdapter recycleViewAdapter;
+    private ImageManager.ImageListChangeListener imageListChangeListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,35 +33,30 @@ public class FavoritesActivity extends AppCompatActivity {
 
     private void loadImages(){
         images = fetchFavoriteImages();
-        /*ImageManager.getInstance().addImageListChangeListener(
-                new ImageManager.ImageListChangeListener() {
-                    @Override
-                    public void onImageRemoved(MediaStoreImage image) {
-                        List<MediaStoreImage> newImages = fetchFavoriteImages();
-                        recycleViewAdapter.update(newImages);
-                    }
-                }
-        );*/
+        imageListChangeListener = new ImageManager.ImageListChangeListener() {
+            @Override
+            public void onImageRemoved(MediaStoreImage image) {
+                List<MediaStoreImage> newImages = fetchFavoriteImages();
+                recycleViewAdapter.update(newImages);
+            }
+        };
+        ImageManager.getInstance().addImageListChangeListener(
+                imageListChangeListener
+        );
     }
 
     private List<MediaStoreImage> fetchFavoriteImages(){
-        List<MediaStoreImage> imgList = new LinkedList<>();
-        for (MediaStoreImage img : ImageManager.getInstance().getImageList()){
-            if (isFavorite(img.contentUri)){
-                imgList.add(img);
-            }
-        }
-        return imgList;
+        return ImageManager.getInstance().getImagesInCollection(this, "image_favorites");
     }
 
     private void showImages(){
         loadImages();
 
-        GalleryAdapter galleryAdapter = new GalleryAdapter(this, images);
+        recycleViewAdapter = new GalleryAdapter(this, images, COLLECTION);
         recyclerView = findViewById(R.id.gallery);
-        GridLayoutManager gridLayoutManager = getGridLayoutManager(galleryAdapter);
+        GridLayoutManager gridLayoutManager = getGridLayoutManager(recycleViewAdapter);
         recyclerView.setLayoutManager(gridLayoutManager);
-        recyclerView.setAdapter(galleryAdapter);
+        recyclerView.setAdapter(recycleViewAdapter);
     }
 
     private @NonNull GridLayoutManager getGridLayoutManager(GalleryAdapter galleryAdapter) {
@@ -82,5 +78,11 @@ public class FavoritesActivity extends AppCompatActivity {
     private boolean isFavorite(Uri imageUri) {
         SharedPreferences preferences = getSharedPreferences("image_favorites", MODE_PRIVATE);
         return preferences.getBoolean(String.valueOf(imageUri.getLastPathSegment()), false);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ImageManager.getInstance().removeImageListChangeListener(imageListChangeListener);
     }
 }

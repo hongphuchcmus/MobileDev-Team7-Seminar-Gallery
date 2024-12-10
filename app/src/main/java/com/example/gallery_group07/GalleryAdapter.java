@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.helper.widget.Grid;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,6 +28,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
     private final Context context;
 
     public static final String TAG = "GalleryAdapter>>";
+    public final String collectionName;
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
         View childView;
@@ -55,8 +55,9 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
         return content.get(position).getType();
     }
 
-    public GalleryAdapter(Context context, List<MediaStoreImage> images) {
+    public GalleryAdapter(Context context, List<MediaStoreImage> images, String collectionName) {
         this.context = context;
+        this.collectionName = collectionName;
         content = createHeaderAndImageItems(images);
     }
 
@@ -117,6 +118,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
                         Bundle bundle = new Bundle();
 
                         bundle.putLong("imgId", mediaStoreImage.id);
+                        bundle.putString("imgCollectionName", collectionName);
 
                         intent.putExtras(bundle);
 

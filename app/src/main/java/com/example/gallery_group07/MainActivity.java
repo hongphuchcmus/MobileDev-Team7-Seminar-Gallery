@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private GalleryAdapter recyclerViewAdapter;
     //Observer in case of the images inside the storage change
     ContentObserver contentObserver;
+    ImageManager.ImageListChangeListener imageListChangeListener;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         if (haveStoragePermission()){
             loadImages();
 
-            recyclerViewAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList());
+            recyclerViewAdapter = new GalleryAdapter(this, ImageManager.getInstance().getImageList(), null);
 
             recyclerView = findViewById(R.id.gallery);
             GridLayoutManager gridLayoutManager = getGridLayoutManager(recyclerViewAdapter);
@@ -180,14 +182,13 @@ public class MainActivity extends AppCompatActivity {
         List<MediaStoreImage> images = queryImages();
         // Load images into ImageManager
         ImageManager.getInstance().setImageList(images);
-        ImageManager.getInstance().addImageListChangeListener(
-                new ImageManager.ImageListChangeListener() {
-                    @Override
-                    public void onImageRemoved(MediaStoreImage image) {
-                        recyclerViewAdapter.update(ImageManager.getInstance().getImageList());
-                    }
-                }
-        );
+        imageListChangeListener = new ImageManager.ImageListChangeListener() {
+            @Override
+            public void onImageRemoved(MediaStoreImage image) {
+                recyclerViewAdapter.update(ImageManager.getInstance().getImageList());
+            }
+        };
+        ImageManager.getInstance().addImageListChangeListener(imageListChangeListener);
 
         Toast.makeText(this, String.format("Found %d image(s)", images.size()), Toast.LENGTH_LONG).show();
 
@@ -337,5 +338,11 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return false;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ImageManager.getInstance().removeImageListChangeListener(imageListChangeListener);
     }
 }
