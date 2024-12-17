@@ -49,7 +49,7 @@ public class ImageScollerAdapter extends RecyclerView.Adapter<ImageScollerAdapte
                         .fitCenter()
                         .format(DecodeFormat.PREFER_ARGB_8888)
                         .override(Target.SIZE_ORIGINAL))
-                .placeholder(R.drawable.image_placeholder)
+//                .placeholder(R.drawable.image_placeholder)
                 .into(holder.imageView);
     }
 

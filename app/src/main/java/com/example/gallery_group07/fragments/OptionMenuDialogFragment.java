@@ -1,8 +1,6 @@
 package com.example.gallery_group07.fragments;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -17,14 +15,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.gallery_group07.R;
 import com.example.gallery_group07.SharedViewModel;
 import com.example.gallery_group07.constants.OptionMenuConstants;
-import com.example.gallery_group07.data.MediaStoreImage;
 import com.example.gallery_group07.interfaces.OptionMenuItem;
 
 import java.util.ArrayList;
@@ -43,44 +38,68 @@ public class OptionMenuDialogFragment extends DialogFragment implements OptionMe
         return rootActivity;
     }
 
-    public OptionMenuDialogFragment(AppCompatActivity rootActivity, String optionName, String[] childOptionMenus){
+    // Combine both
+    public OptionMenuDialogFragment(AppCompatActivity rootActivity, String optionName, String[] childOptionMenu, OptionMenuItem[] options) {
         this.rootActivity = rootActivity;
         this.optionName = optionName;
-        if (childOptionMenus == null){
+
+        int totalSize = (childOptionMenu != null ? childOptionMenu.length : 0) + (options != null ? options.length : 0);;
+        this.optionItems = new ArrayList<>(totalSize);
+        if (childOptionMenu != null && childOptionMenu.length > 0){
+            for (String menu : childOptionMenu){
+                this.optionItems.add(createMenu(rootActivity, menu));
+            }
+        }
+        if (options != null && options.length > 0){
+            this.optionItems.addAll(Arrays.asList(options));
+        }
+    }
+
+    public final static OptionMenuDialogFragment createMenu(AppCompatActivity rootActivity, String menuName) {
+        switch (menuName) {
+            case OptionMenuConstants.ADD_TO_ALBUM_OPTION_MENU: {
+                return new AddToAlbumOptionMenuFragment(rootActivity, "Add to Album", null);
+            }
+            case OptionMenuConstants.REMOVE_FROM_ALBUM_OPTION_MENU: {
+                return new RemoveFromAlbumOptionMenuFragment(rootActivity, "Remove from Album", null);
+            }
+            default:
+                return null;
+        }
+    }
+
+    public OptionMenuDialogFragment(AppCompatActivity rootActivity, String optionName, String[] childOptionMenus) {
+        this.rootActivity = rootActivity;
+        this.optionName = optionName;
+        if (childOptionMenus == null) {
             this.optionItems = new ArrayList<>();
             return;
         }
         this.optionItems = new ArrayList<>(childOptionMenus.length);
-        for (String menu : childOptionMenus){
-            OptionMenuItem item;
-            switch (menu){
-                case OptionMenuConstants.ALBUM_OPTION_MENU: {
-                    item = new AlbumOptionMenuFragment(rootActivity, "Add to Menu", null);
-                    break;
-                }
-                default:
-                    item = null;
-            }
-            this.optionItems.add(item);
+        for (String menu : childOptionMenus) {
+            this.optionItems.add(createMenu(rootActivity, menu));
         }
     }
 
-    public OptionMenuDialogFragment(AppCompatActivity rootActivity, String optionName, OptionMenuItem[] options){
+    public OptionMenuDialogFragment(AppCompatActivity rootActivity, String optionName, OptionMenuItem[] options) {
         this.rootActivity = rootActivity;
         this.optionName = optionName;
-        if (options == null){
+        if (options == null) {
             this.optionItems = new ArrayList<>();
             return;
         }
         this.optionItems = Arrays.asList(options);
     }
 
-    public final void onOptionSelected(int position){
+    public final void onOptionSelected(int position) {
         optionItems.get(position).onThisOptionSelected();
         dismiss();
-    };
+    }
 
-    public void createOptions(){}
+    ;
+
+    public void createOptions() {
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -101,9 +120,11 @@ public class OptionMenuDialogFragment extends DialogFragment implements OptionMe
         ListView listView = view.findViewById(R.id.option_menu_listview);
 
         SharedViewModel viewModel = getViewModel();
-        
+
         ArrayList<String> optionTexts = new ArrayList<>(optionItems.size());
-        for (OptionMenuItem item : optionItems){optionTexts.add(item.getOptionName());}
+        for (OptionMenuItem item : optionItems) {
+            optionTexts.add(item.getOptionName());
+        }
         OptionMenuAdapter adapter = new OptionMenuAdapter(optionTexts);
         Log.i(LOG_TAG, "Size " + optionItems.size());
         listView.setAdapter(adapter);
@@ -117,7 +138,7 @@ public class OptionMenuDialogFragment extends DialogFragment implements OptionMe
         };
     }
 
-    public final SharedViewModel getViewModel(){
+    public final SharedViewModel getViewModel() {
         return (new ViewModelProvider(rootActivity)).get(SharedViewModel.class);
     }
 
@@ -142,7 +163,7 @@ public class OptionMenuDialogFragment extends DialogFragment implements OptionMe
 
     @Override
     public void onThisOptionSelected() {
-        if (!isVisible() && rootActivity != null){
+        if (!isVisible() && rootActivity != null) {
             show(rootActivity.getSupportFragmentManager(), "");
         }
     }

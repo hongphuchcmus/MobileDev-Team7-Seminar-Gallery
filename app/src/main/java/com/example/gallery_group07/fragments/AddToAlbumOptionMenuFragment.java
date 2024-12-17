@@ -1,8 +1,5 @@
 package com.example.gallery_group07.fragments;
 
-import android.app.Dialog;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -17,7 +14,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.FragmentManager;
 
 import com.example.gallery_group07.R;
 import com.example.gallery_group07.SharedViewModel;
@@ -26,12 +22,11 @@ import com.example.gallery_group07.data.MediaStoreImage;
 import com.example.gallery_group07.interfaces.OptionMenuItem;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
-public class AlbumOptionMenuFragment extends OptionMenuDialogFragment{
+public class AddToAlbumOptionMenuFragment extends OptionMenuDialogFragment{
     public static final String LOG_TAG = "AlbumOptionMenuFragment";
 
-    public AlbumOptionMenuFragment(AppCompatActivity rootActivity, String optionName, OptionMenuItem[] options){
+    public AddToAlbumOptionMenuFragment(AppCompatActivity rootActivity, String optionName, OptionMenuItem[] options){
         super(rootActivity, optionName, options);
     }
 
@@ -52,9 +47,9 @@ public class AlbumOptionMenuFragment extends OptionMenuDialogFragment{
     public static class AlbumOptionNewAlbum extends DialogFragment implements OptionMenuItem{
         Button okButton;
         EditText editText;
-        AlbumOptionMenuFragment menuFragment;
+        AddToAlbumOptionMenuFragment menuFragment;
 
-        public AlbumOptionNewAlbum(AlbumOptionMenuFragment menuFragment){
+        public AlbumOptionNewAlbum(AddToAlbumOptionMenuFragment menuFragment){
             this.menuFragment = menuFragment;
         }
 
@@ -114,9 +109,9 @@ public class AlbumOptionMenuFragment extends OptionMenuDialogFragment{
 
     public static class AlbumOptionAddTo implements OptionMenuItem{
         public final String albumName;
-        public final AlbumOptionMenuFragment menuFragment;
+        public final AddToAlbumOptionMenuFragment menuFragment;
 
-        public AlbumOptionAddTo(String albumName, AlbumOptionMenuFragment menuFragment){
+        public AlbumOptionAddTo(String albumName, AddToAlbumOptionMenuFragment menuFragment){
             this.albumName = albumName;
             this.menuFragment = menuFragment;
         }

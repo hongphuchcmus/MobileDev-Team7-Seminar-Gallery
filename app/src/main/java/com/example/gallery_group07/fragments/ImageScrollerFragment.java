@@ -26,6 +26,7 @@ import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
@@ -36,6 +37,7 @@ import com.example.gallery_group07.data.MediaStoreImage;
 import com.example.gallery_group07.R;
 import com.example.gallery_group07.adapters.ImageScollerAdapter;
 import com.example.gallery_group07.activities.ImageGridActivity;
+import com.example.gallery_group07.interfaces.OptionMenuItem;
 
 public class ImageScrollerFragment extends Fragment {
     // Debug
@@ -143,10 +145,14 @@ public class ImageScrollerFragment extends Fragment {
 
     public void moreOptions(){
         MediaStoreImage currentImage = gridActivity.getImageList().get(viewPager.getCurrentItem());
-        String[] options = {
-                OptionMenuConstants.ALBUM_OPTION_MENU,
+        String[] optionMenus = {
+                OptionMenuConstants.ADD_TO_ALBUM_OPTION_MENU,
+                OptionMenuConstants.REMOVE_FROM_ALBUM_OPTION_MENU
         };
-        OptionMenuDialogFragment dialog = new OptionMenuDialogFragment(gridActivity, "More", options);
+        OptionMenuItem[] customOptions = {
+                new ImageDetailsOption(gridActivity, currentImage),
+        };
+        OptionMenuDialogFragment dialog = new OptionMenuDialogFragment(gridActivity, "More", optionMenus, customOptions);
         dialog.show(gridActivity.getSupportFragmentManager(), "OptionMenuDialogFragment");
     }
 
@@ -209,6 +215,14 @@ public class ImageScrollerFragment extends Fragment {
     public void onPostImageDeletion(){
         MediaStoreImage currentImage = gridActivity.getImageList().get(viewPager.getCurrentItem());
         gridActivity.getViewModel().performDeleteImagePostRequest(requireContext(), currentImage);
+        ImageScollerAdapter adapter = (ImageScollerAdapter) viewPager.getAdapter();
+        if (adapter == null) return;
+        gridActivity.reloadImages();
+        adapter.update(gridActivity.getImageList());
+        update(viewPager.getCurrentItem());
+    }
+
+    public void onPostImageRemoval(){
         ImageScollerAdapter adapter = (ImageScollerAdapter) viewPager.getAdapter();
         if (adapter == null) return;
         gridActivity.reloadImages();
@@ -370,5 +384,26 @@ public class ImageScrollerFragment extends Fragment {
         visibleImageView = findVisibleImageView();
         resetImageTransformations();
         applyImageTransformations();
+    }
+
+    public static class ImageDetailsOption implements OptionMenuItem{
+        MediaStoreImage currentImage;
+        AppCompatActivity rootActivity;
+
+        public ImageDetailsOption(AppCompatActivity rootActivity, MediaStoreImage currentImage){
+            this.rootActivity = rootActivity;
+            this.currentImage = currentImage;
+        }
+
+        @Override
+        public String getOptionName() {
+            return "Details";
+        }
+
+        @Override
+        public void onThisOptionSelected() {
+            ImageDetailsFragment detailsFragment = new ImageDetailsFragment(currentImage);
+            detailsFragment.show(rootActivity.getSupportFragmentManager(), "");
+        }
     }
 }

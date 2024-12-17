@@ -18,10 +18,12 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.gallery_group07.constants.SharedPreferencesConstants;
+import com.example.gallery_group07.data.AlbumItem;
 import com.example.gallery_group07.data.MediaStoreImage;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,14 +43,14 @@ public class SharedViewModel extends ViewModel {
         imageList.setValue(data);
     }
 
-    public void removeFromImageList(MediaStoreImage image){
+    public void removeFromImageList(MediaStoreImage image) {
         if (!imageList.isInitialized()) return;
         LinkedList<MediaStoreImage> images = new LinkedList<>(imageList.getValue());
         images.remove(image);
         imageList.setValue(images);
     }
 
-    public void removeFromImageListByIds(List<Long> ids){
+    public void removeFromImageListByIds(List<Long> ids) {
         if (!imageList.isInitialized()) return;
         LinkedList<MediaStoreImage> images = new LinkedList<>(imageList.getValue());
         images.removeIf(image -> ids.contains(image.id));
@@ -93,7 +95,7 @@ public class SharedViewModel extends ViewModel {
         }
     }
 
-    public void removeFromSavedImageIds(Context context, long imageId){
+    public void removeFromSavedImageIds(Context context, long imageId) {
         // Update the deleted images in SharedPreferences
         SharedPreferences savedImageIdsPrefs = context.getSharedPreferences(SharedPreferencesConstants.SAVED_IMAGE_IDS, Context.MODE_PRIVATE);
         Set<String> savedIds = new HashSet<>(savedImageIdsPrefs.getStringSet(SharedPreferencesConstants.SAVED_IMAGE_IDS_SET, new HashSet<>()));
@@ -184,7 +186,7 @@ public class SharedViewModel extends ViewModel {
                 while (cursor.moveToNext()) {
                     long id = cursor.getLong(idColumn);
 
-                    if (albumName != null && !isImageInAlbum(activity, albumName, id)){
+                    if (albumName != null && !isImageInAlbum(activity, albumName, id)) {
                         continue;
                     }
 
@@ -277,13 +279,13 @@ public class SharedViewModel extends ViewModel {
     }
 
     public Set<String> getAllAlbums(Context context) {
-        SharedPreferences albumPrefs = context.getSharedPreferences("album", Context.MODE_PRIVATE);
+        SharedPreferences albumPrefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE);
         return albumPrefs.getStringSet("albums", new HashSet<>());
     }
 
     public void deleteAlbum(Context context, String albumName) {
         // Step 1: Remove the album name from the global album list
-        SharedPreferences albumPrefs = context.getSharedPreferences("album", Context.MODE_PRIVATE);
+        SharedPreferences albumPrefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE);
         Set<String> albumSet = new HashSet<>(albumPrefs.getStringSet("albums", new HashSet<>()));
 
         if (albumSet.remove(albumName)) {
@@ -304,7 +306,7 @@ public class SharedViewModel extends ViewModel {
 
     public void createNewAlbumIfNotExists(Context context, String albumName) {
         // Step 1: Access the global album list
-        SharedPreferences albumPrefs = context.getSharedPreferences("album", Context.MODE_PRIVATE);
+        SharedPreferences albumPrefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE);
         Set<String> albumSet = new HashSet<>(albumPrefs.getStringSet("albums", new HashSet<>()));
 
         // Step 2: Check if the album already exists
@@ -332,8 +334,8 @@ public class SharedViewModel extends ViewModel {
         return imageSet.contains(String.valueOf(imageId));
     }
 
-    public boolean existsAlbum(Context context, String albumName){
-        SharedPreferences albumPrefs = context.getSharedPreferences("album", Context.MODE_PRIVATE);
+    public boolean existsAlbum(Context context, String albumName) {
+        SharedPreferences albumPrefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE);
         Set<String> albumSet = albumPrefs.getStringSet("albums", new HashSet<>());
         return albumSet.contains(albumName);
     }
@@ -342,7 +344,7 @@ public class SharedViewModel extends ViewModel {
         Map<String, Integer> albumImageCounts = new HashMap<>();
 
         // Access the global album list
-        SharedPreferences albumPrefs = context.getSharedPreferences("album", Context.MODE_PRIVATE);
+        SharedPreferences albumPrefs = context.getSharedPreferences("albums", Context.MODE_PRIVATE);
         Set<String> albumSet = albumPrefs.getStringSet("albums", new HashSet<>());
 
         // Iterate through each album and retrieve the image count
@@ -357,12 +359,13 @@ public class SharedViewModel extends ViewModel {
 
         return albumImageCounts;
     }
+
     // This should only run once and on start
-    public void addAllToSavedImageIds(Context context){
+    public void addAllToSavedImageIds(Context context) {
         if (!imageList.isInitialized()) return;
         long[] ids = new long[imageList.getValue().size()];
         ListIterator<MediaStoreImage> iterator = imageList.getValue().listIterator();
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             ids[iterator.nextIndex()] = iterator.next().id;
         }
 
@@ -370,7 +373,7 @@ public class SharedViewModel extends ViewModel {
         SharedPreferences.Editor editor = savedImageIdsPrefs.edit();
         editor.clear(); // Fresh start
         Set<String> savedIds = new HashSet<>();
-        for (long id : ids){
+        for (long id : ids) {
             savedIds.add(String.valueOf(id));
         }
         editor.putStringSet(SharedPreferencesConstants.SAVED_IMAGE_IDS_SET, savedIds);
@@ -410,4 +413,47 @@ public class SharedViewModel extends ViewModel {
         return modified;
     }
 
+    public ArrayList<String> getAlbumsContainingImage(Context context, long imageId) {
+        Set<String> availableAlbums = getAllAlbums(context);
+        ArrayList<String> albums = new ArrayList<>(availableAlbums.size());
+        for (String album : availableAlbums) {
+            if (isImageInAlbum(context, album, imageId)) {
+                albums.add(album);
+            }
+        }
+        return albums;
+    }
+
+    public Uri getCoverImageUri(Context context, String albumName) {
+        SharedPreferences albumPrefs = context.getSharedPreferences(albumName, Context.MODE_PRIVATE);
+        Set<String> imageSet = albumPrefs.getStringSet("images", new HashSet<>());
+        if (imageSet.isEmpty()) return null;
+        long coverId = Long.parseLong(imageSet.iterator().next());
+        return ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, coverId);
+    }
+
+    ;
+
+    public int getAlbumImageCount(Context context, String albumName) {
+        SharedPreferences albumPrefs = context.getSharedPreferences(albumName, Context.MODE_PRIVATE);
+        Set<String> imageSet = albumPrefs.getStringSet("images", new HashSet<>());
+        return imageSet.size();
+    }
+
+    public List<AlbumItem> loadAlbums(Context context) {
+        Set<String> availableAlbums = getAllAlbums(context);
+        ArrayList<AlbumItem> albumList = new ArrayList<>(availableAlbums.size());
+        Log.i(LOG_TAG, "Found " + availableAlbums.size() + " albums");
+        for (String album : availableAlbums) {
+            albumList.add(new AlbumItem(
+                    album,
+                    getCoverImageUri(context, album),
+                    getAlbumImageCount(context, album)
+            ));
+        }
+        Log.i(LOG_TAG, "Loaded " + albumList.size() + " albums");
+        return  albumList;
+    }
+
+    ;
 }

@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="rounded_corner">
+    <style name="rounded_corner_small">
         <item name="cornerSize">2dp</item>
+    </style>
+    <style name="rounded_corner_medium">
+        <item name="cornerSize">4dp</item>
+    </style>
+    <style name="rounded_corner_large">
+        <item name="cornerSize">8dp</item>
     </style>
 </resources>

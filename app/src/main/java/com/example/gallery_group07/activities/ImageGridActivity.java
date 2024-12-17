@@ -35,7 +35,7 @@ public class ImageGridActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_display, menu);
         return true;
     }
 
@@ -44,6 +44,7 @@ public class ImageGridActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.menu_favorites) {
             Intent intent = new Intent(this, FavoritesActivity.class);
             startActivity(intent);
+            //finish();
             return true;
         }
         if (item.getItemId() == R.id.menu_group) {
@@ -56,11 +57,20 @@ public class ImageGridActivity extends AppCompatActivity {
             OptionMenuDialogFragment sortOptionMenu = new OptionMenuDialogFragment(this, "Group", sortOptions);
             sortOptionMenu.show(getSupportFragmentManager(), "");
         }
+        if (item.getItemId() == R.id.menu_albums){
+            Intent intent = new Intent(this, AlbumsActivity.class);
+            startActivity(intent);
+            //finish();
+            return true;
+        }
+        if (item.getItemId() == R.id.menu_all){
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            finish();  // Optionally call finish() to remove the current activity from the stack
+            return true;
+        }
         return super.onOptionsItemSelected(item);
-    }
-
-    public String getCollection() {
-        return null;
     }
 
     public final List<MediaStoreImage> getImageList() {

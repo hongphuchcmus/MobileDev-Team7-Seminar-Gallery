@@ -151,7 +151,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ViewHold
             Glide.with(holder.getChildView())
                     .load(mediaStoreImage.contentUri)
                     .centerCrop()
-                    .placeholder(R.drawable.image_placeholder)
+//                    .placeholder(R.drawable.image_placeholder)
                     .sizeMultiplier(0.5f)
                     .into(imageView);
         } else {

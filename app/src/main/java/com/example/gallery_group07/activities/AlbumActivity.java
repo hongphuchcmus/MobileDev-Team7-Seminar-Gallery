@@ -1,19 +1,20 @@
 package com.example.gallery_group07.activities;
 
 import android.os.Bundle;
+import android.view.Menu;
 
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.gallery_group07.R;
 
-public class FavoritesActivity extends ImageGridActivity {
-    private static final String LOG_TAG = "FavoriteActivity";
-    public static final String ALBUM_NAME = "image_favorites";
+public class AlbumActivity extends ImageGridActivity {
+    private static final String LOG_TAG = "AlbumActivity";
+    public String albumName;
 
     @Override
     public void loadImages() {
-        getViewModel().loadImages(this, ALBUM_NAME);
+        getViewModel().loadImages(this, albumName);
         setImageList(getViewModel().getImageList());
     }
 
@@ -32,7 +33,11 @@ public class FavoritesActivity extends ImageGridActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setTitle("Favorites");
+
+        albumName = getIntent().getStringExtra("albumName");
+        setTitle(albumName);
+
         loadAndShowImages();
     }
+
 }

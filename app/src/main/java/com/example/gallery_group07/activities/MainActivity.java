@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.Menu;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,8 +27,9 @@ public class MainActivity extends ImageGridActivity {
     private static final String TAG = "MainActivity>>";
 
     @Override
-    public String getCollection() {
-        return null;
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
     }
 
     @Override

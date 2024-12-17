@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title or Display Name -->
+    <TextView
+        android:id="@+id/image_details_title_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Image Title"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/colorBlack"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Date -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Date:"
+            android:textStyle="bold"
+            android:textColor="@color/colorBlack" />
+
+        <TextView
+            android:id="@+id/image_details_date_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="01 Jan 2024"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Dimensions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Dimensions:"
+            android:textStyle="bold"
+            android:textColor="@color/colorBlack" />
+
+        <TextView
+            android:id="@+id/image_details_dimensions_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1920 x 1080"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- File Size -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Size:"
+            android:textStyle="bold"
+            android:textColor="@color/colorBlack" />
+
+        <TextView
+            android:id="@+id/image_details_size_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2.3 MB"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Close Button -->
+    <Button
+        android:id="@+id/image_details_close_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/close"
+        android:layout_gravity="end"
+        android:textColor="@color/colorWhite"
+        android:backgroundTint="@color/colorPrimary"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>
