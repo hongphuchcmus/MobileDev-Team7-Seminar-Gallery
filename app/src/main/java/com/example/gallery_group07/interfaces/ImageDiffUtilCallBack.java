@@ -1,6 +1,8 @@
-package com.example.gallery_group07;
+package com.example.gallery_group07.interfaces;
 
 import androidx.recyclerview.widget.DiffUtil;
+
+import com.example.gallery_group07.data.MediaStoreImage;
 
 import java.util.List;
 

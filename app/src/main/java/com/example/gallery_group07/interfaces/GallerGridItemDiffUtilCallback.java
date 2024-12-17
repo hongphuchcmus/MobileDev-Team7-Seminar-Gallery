@@ -1,14 +1,17 @@
-package com.example.gallery_group07;
+package com.example.gallery_group07.interfaces;
 
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 
+import com.example.gallery_group07.data.GalleryGridItem;
+import com.example.gallery_group07.data.MediaStoreImage;
+
 import java.util.List;
 
 public class GallerGridItemDiffUtilCallback extends DiffUtil.Callback {
-    public final String TAG = "GallerGridItemDiffUtilCallback>>";
+    public final String LOG_TAG = "GallerGridItemDiffUtilCallback";
     private final List<GalleryGridItem> oldList;
     private final List<GalleryGridItem> newList;
 
@@ -71,7 +74,7 @@ public class GallerGridItemDiffUtilCallback extends DiffUtil.Callback {
     @Nullable
     @Override
     public Object getChangePayload(int oldItemPosition, int newItemPosition) {
-        Log.i(TAG, "Changes appeared");
+        Log.i(LOG_TAG, "Changes appeared");
         return super.getChangePayload(oldItemPosition, newItemPosition);
     }
 }

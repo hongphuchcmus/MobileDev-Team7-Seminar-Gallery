@@ -1,28 +1,33 @@
-package com.example.gallery_group07;
+package com.example.gallery_group07.adapters;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
+import com.example.gallery_group07.interfaces.ImageDiffUtilCallBack;
+import com.example.gallery_group07.data.MediaStoreImage;
+import com.example.gallery_group07.R;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.ImageViewHolder> {
-    public final static String TAG = "ImagePagerAdapter>>";
-    private Context context;
-    private List<MediaStoreImage> images;
+public class ImageScollerAdapter extends RecyclerView.Adapter<ImageScollerAdapter.ImageViewHolder> {
+    public final static String TAG = "ImagePagerAdapter";
 
-    public ImagePagerAdapter(Context context, List<MediaStoreImage> images) {
+    private final Context context;
+    private final List<MediaStoreImage> images;
+
+    public ImageScollerAdapter(Context context, List<MediaStoreImage> images) {
         this.context = context;
         this.images = new LinkedList<>(images);
     }
@@ -64,6 +69,10 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
             super(itemView);
             imageView = itemView.findViewById(R.id.img_detail_view);
         }
+
+        public ImageView getImageView() {
+            return imageView;
+        }
     }
 
     public void update(List<MediaStoreImage> newImages) {
@@ -72,4 +81,5 @@ public class ImagePagerAdapter extends RecyclerView.Adapter<ImagePagerAdapter.Im
         images.addAll(newImages);
         diffResult.dispatchUpdatesTo(this);
     }
+
 }

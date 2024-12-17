@@ -30,4 +30,6 @@
     <color name="colorOrange">#FFA500</color>
     <color name="colorPurple">#800080</color>
     <color name="colorIconOutline">#1C274C</color>
+    <color name="colorBackgroundDark">#000000</color>
+    <color name="colorTransparent">#00000000</color>
 </resources>
