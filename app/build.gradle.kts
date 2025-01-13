@@ -43,4 +43,5 @@ dependencies {
 
     implementation(libs.glide)
     implementation("androidx.viewpager2:viewpager2:1.0.0")
+    implementation ("com.burhanrashid52:photoeditor:3.0.2")
 }

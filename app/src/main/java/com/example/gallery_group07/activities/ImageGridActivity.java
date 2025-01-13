@@ -1,6 +1,7 @@
 package com.example.gallery_group07.activities;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,7 +26,7 @@ import com.example.gallery_group07.interfaces.OptionMenuItem;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ImageGridActivity extends AppCompatActivity {
+public abstract class ImageGridActivity extends AppCompatActivity {
     public static final String LOG_TAG = "ImageGridActivity";
 
     private List<MediaStoreImage> imageList;
@@ -156,6 +157,8 @@ public class ImageGridActivity extends AppCompatActivity {
         });
         return gridLayoutManager;
     }
+
+    public abstract void onImageClick(Bitmap imageBitmap);
 
     public class GroupOption implements OptionMenuItem {
         int groupingMode = 0;

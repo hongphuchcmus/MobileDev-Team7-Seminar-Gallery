@@ -1,5 +1,6 @@
 package com.example.gallery_group07.activities;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
 
@@ -21,6 +22,11 @@ public class AlbumActivity extends ImageGridActivity {
     @Override
     public void reloadImages() {
         super.reloadImages();
+    }
+
+    @Override
+    public void onImageClick(Bitmap imageBitmap) {
+
     }
 
     public void loadAndShowImages(){

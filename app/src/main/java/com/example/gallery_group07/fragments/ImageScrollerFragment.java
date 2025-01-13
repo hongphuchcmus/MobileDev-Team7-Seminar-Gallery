@@ -1,9 +1,10 @@
-package com.example.gallery_group07.fragments;
+  package com.example.gallery_group07.fragments;
 
 import static android.app.Activity.RESULT_OK;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,6 +32,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.gallery_group07.activities.EditPhotoActivity;
 import com.example.gallery_group07.activities.FavoritesActivity;
 import com.example.gallery_group07.constants.OptionMenuConstants;
 import com.example.gallery_group07.data.MediaStoreImage;
@@ -42,6 +44,7 @@ import com.example.gallery_group07.interfaces.OptionMenuItem;
 public class ImageScrollerFragment extends Fragment {
     // Debug
     public static final String LOG_TAG = "ImageScrollerFragment";
+    private static final int REQUEST_CODE_EDIT = 1001;
 
     private ImageGridActivity gridActivity;
     private ViewPager2 viewPager;
@@ -68,6 +71,7 @@ public class ImageScrollerFragment extends Fragment {
     private ImageButton favoriteButton;
     private ImageButton shareButton;
     private ImageButton moreButton;
+    private ImageButton editButton;
 
     // Animations
     private Handler animationHandler;
@@ -102,11 +106,13 @@ public class ImageScrollerFragment extends Fragment {
         favoriteButton = view.findViewById(R.id.btn_favorite);
         shareButton = view.findViewById(R.id.btn_share);
         moreButton = view.findViewById(R.id.btn_more);
+        editButton = view.findViewById(R.id.btn_edit);
 
         deleteButton.setOnClickListener(listener -> deleteCurrentImage());
         favoriteButton.setOnClickListener(listener -> toggleFavouriteStatus());
         shareButton.setOnClickListener(listener -> shareCurrentImage());
         moreButton.setOnClickListener(listener -> moreOptions());
+        editButton.setOnClickListener(listener -> editCurrentImage());
 
         viewPager = view.findViewById(R.id.img_scroller_viewpager);
         ImageScollerAdapter adapter = new ImageScollerAdapter(requireContext(), gridActivity.getImageList());
@@ -183,6 +189,15 @@ public class ImageScrollerFragment extends Fragment {
         startActivity(Intent.createChooser(shareIntent, "Share image via"));
     }
 
+    public void editCurrentImage() {
+        MediaStoreImage currentImage = gridActivity.getImageList().get(viewPager.getCurrentItem());
+        if (currentImage == null) return;
+
+        Intent editIntent = new Intent(gridActivity, EditPhotoActivity.class);
+        editIntent.putExtra("imageUri", Uri.parse(currentImage.contentUri.toString()));
+        startActivity(editIntent);
+    }
+
     public void toggleFavouriteStatus(){
         MediaStoreImage currentImage = gridActivity.getImageList().get(viewPager.getCurrentItem());
         if (currentImage == null) return;
@@ -231,7 +246,7 @@ public class ImageScrollerFragment extends Fragment {
     }
 
     public class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        
+
         @Override
         public boolean onScale(@NonNull ScaleGestureDetector detector) {
             // Handle pinch-to-zoom gestures manually to avoid undesired behavior
@@ -285,7 +300,7 @@ public class ImageScrollerFragment extends Fragment {
                 (ImageScollerAdapter.ImageViewHolder) recyclerView.findViewHolderForAdapterPosition(viewPager.getCurrentItem());
         return viewHolder != null ? viewHolder.getImageView() : null;
     }
-    
+
     private void applyImageTransformations() {
         // Restrict the image panning into its boundaries
         if (visibleImageView == null) return;

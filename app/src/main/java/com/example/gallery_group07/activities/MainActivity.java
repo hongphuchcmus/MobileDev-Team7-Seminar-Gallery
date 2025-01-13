@@ -6,11 +6,14 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Menu;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -23,7 +26,6 @@ import com.example.gallery_group07.R;
 
 public class MainActivity extends ImageGridActivity {
     private static final int READ_EXTERNAL_STORAGE_REQUEST = 0x1045;
-
     private static final String TAG = "MainActivity>>";
 
     @Override
@@ -37,6 +39,7 @@ public class MainActivity extends ImageGridActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setTitle("Gallery");
+
         if (haveStoragePermission()) {
             loadAndShowImages();
         } else {
@@ -110,5 +113,18 @@ public class MainActivity extends ImageGridActivity {
         intent.addCategory(Intent.CATEGORY_DEFAULT);//Redundant
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+    }
+
+    @Override
+    public void onImageClick(Bitmap imageBitmap) {
+        Intent intent = new Intent(this, EditPhotoActivity.class);
+        intent.putExtra("imageBitmap", imageBitmap);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadAndShowImages();
     }
 }

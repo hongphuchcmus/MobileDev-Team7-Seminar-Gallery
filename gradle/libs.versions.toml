@@ -8,9 +8,11 @@ appcompat = "1.7.0"
 material = "1.12.0"
 activity = "1.9.3"
 constraintlayout = "2.2.0"
+photoeditor = "1.1.0"
 supportV4 = "28.0.0"
 xglide = "4.16.0"
 roomCompilerProcessingTesting = "2.6.1"
+ucrop = "2.2.6"
 
 [libraries]
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -21,9 +23,11 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+photoeditor = { module = "ja.burhanrashid52:photoeditor", version.ref = "photoeditor" }
 support-v4 = { module = "com.android.support:support-v4", version.ref = "supportV4" }
 xglide = { module = "com.github.bumptech.glide: glide", version = "4.16.0" }
 room-compiler-processing-testing = { group = "androidx.room", name = "room-compiler-processing-testing", version.ref = "roomCompilerProcessingTesting" }
+ucrop = { module = "com.github.yalantis:ucrop", version.ref = "ucrop" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
