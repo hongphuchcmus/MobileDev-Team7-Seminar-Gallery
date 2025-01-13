@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "513048353668",
+    "firebase_url": "https://image-manager-ec65a-default-rtdb.firebaseio.com",
+    "project_id": "image-manager-ec65a",
+    "storage_bucket": "image-manager-ec65a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513048353668:android:5b944733ec57c61646dbd1",
+        "android_client_info": {
+          "package_name": "com.example.gallery_group07"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7K32-uW7y3FdyGbCSV59KInutUFaEmHo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513048353668:android:e6fac331a962dc3846dbd1",
+        "android_client_info": {
+          "package_name": "com.example.imagemanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7K32-uW7y3FdyGbCSV59KInutUFaEmHo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

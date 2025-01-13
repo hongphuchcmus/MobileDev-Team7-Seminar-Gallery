@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -71,6 +72,17 @@ public abstract class ImageGridActivity extends AppCompatActivity {
             finish();  // Optionally call finish() to remove the current activity from the stack
             return true;
         }
+        if (item.getItemId() == R.id.menu_upload){
+            Intent intent = new Intent(this, UploadedActivity.class);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+            finish();  // Optionally call finish() to remove the current activity from the stack
+//            Toast.makeText(this, "This is my Toast message!",
+//                    Toast.LENGTH_LONG).show();
+            return true;
+
+        }
+
         return super.onOptionsItemSelected(item);
     }
 

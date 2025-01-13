@@ -19,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.gallery_group07.R;
 import com.example.gallery_group07.SharedViewModel;
+import com.example.gallery_group07.activities.ImageGridActivity;
 import com.example.gallery_group07.constants.OptionMenuConstants;
 import com.example.gallery_group07.interfaces.OptionMenuItem;
 
@@ -62,6 +63,9 @@ public class OptionMenuDialogFragment extends DialogFragment implements OptionMe
             }
             case OptionMenuConstants.REMOVE_FROM_ALBUM_OPTION_MENU: {
                 return new RemoveFromAlbumOptionMenuFragment(rootActivity, "Remove from Album", null);
+            }
+            case OptionMenuConstants.UPLOAD_OPTION_MENU: {
+                
             }
             default:
                 return null;

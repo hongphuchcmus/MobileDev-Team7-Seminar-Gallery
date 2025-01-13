@@ -153,7 +153,8 @@ public class ImageScrollerFragment extends Fragment {
         MediaStoreImage currentImage = gridActivity.getImageList().get(viewPager.getCurrentItem());
         String[] optionMenus = {
                 OptionMenuConstants.ADD_TO_ALBUM_OPTION_MENU,
-                OptionMenuConstants.REMOVE_FROM_ALBUM_OPTION_MENU
+                OptionMenuConstants.REMOVE_FROM_ALBUM_OPTION_MENU,
+                OptionMenuConstants.UPLOAD_OPTION_MENU
         };
         OptionMenuItem[] customOptions = {
                 new ImageDetailsOption(gridActivity, currentImage),
